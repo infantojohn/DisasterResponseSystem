@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disaster Response System</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f2f4f7;
+        }
+
+        header {
+            background: #b71c1c;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 30px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h2 { margin-top: 0; }
+
+        label {
+            display: block;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        textarea, input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        textarea {
+            height: 150px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 14px;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover { background: #b71c1c; }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #result, #trackingResult {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            display: none;
+            overflow-wrap: anywhere;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+
+        .critical {
+            font-weight: bold;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #ddd;
+            margin: 30px 0;
+        }
+
+        .timeline {
+            border-left: 3px solid #d32f2f;
+            margin: 20px 0 10px 8px;
+            padding-left: 20px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 22px;
+        }
+
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -27px;
+            top: 4px;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: #9e9e9e;
+        }
+
+        .timeline-item.completed::before {
+            background: #2e7d32;
+        }
+
+        .timeline-item.current::before {
+            background: #d32f2f;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 15px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>🚨 Disaster Response System</h1>
+    <p>Report an emergency and track rescue progress</p>
+</header>
+
+<div class="container">
+
+    <h2>Emergency Report</h2>
+
+    <label for="report">Describe the emergency</label>
+    <textarea
+        id="report"
+        placeholder="Example: 15 people are trapped inside a flooded house and 2 are injured"
+    ></textarea>
+
+    <label for="location">Location</label>
+    <input
+        type="text"
+        id="location"
+        placeholder="Enter your location"
+    >
+
+    <button id="submitButton" onclick="submitReport()">
+        🚨 Submit Emergency Report
+    </button>
+
+    <div id="result" aria-live="polite"></div>
+
+    <hr class="divider">
+
+    <h2>📍 Track Your Emergency</h2>
+    <p>Enter the Incident ID you received after submitting your report.</p>
+
+    <label for="trackingId">Incident ID</label>
+    <input
+        type="text"
+        id="trackingId"
+        placeholder="Paste your Incident ID here"
+    >
+
+    <button id="trackButton" onclick="trackIncident()">
+        Track Rescue Progress
+    </button>
+
+    <div id="trackingResult" aria-live="polite"></div>
+
+</div>
+
+<script>
+const API_URL = `${window.location.protocol}//${window.location.hostname}:8000`;
+const TRACKING_REFRESH_MS = 5000;
+
+let trackingInterval = null;
+let activeTrackingId = "";
+let trackingRequestInProgress = false;
+
+
+// Format timestamps consistently in India Standard Time.
+function formatIST(value) {
+    if (!value) return "";
+
+    let timestamp = String(value).trim();
+
+    // Assume timestamps without a timezone suffix are UTC.
+    if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(timestamp)) {
+        timestamp += "Z";
+    }
+
+    const date = new Date(timestamp);
+
+    if (Number.isNaN(date.getTime())) {
+        return "Time unavailable";
+    }
+
+    return date.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    }) + " IST";
+}
+
+
+// Stop automatic status refresh.
+function stopTrackingAutoRefresh() {
+    if (trackingInterval !== null) {
+        clearInterval(trackingInterval);
+        trackingInterval = null;
+    }
+}
+
+
+// Start automatic status refresh every five seconds.
+function startTrackingAutoRefresh(incidentId) {
+    stopTrackingAutoRefresh();
+    activeTrackingId = incidentId;
+
+    // Do not keep polling after the incident is completed.
+    // Remove this condition if you prefer to continue checking it.
+    trackingInterval = setInterval(() => {
+        if (
+            document.visibilityState === "visible" &&
+            activeTrackingId === incidentId
+        ) {
+            trackIncident({ silent: true });
+        }
+    }, TRACKING_REFRESH_MS);
+}
+
+
+// Pause polling when the page is hidden.
+// Resume tracking when the page becomes visible again.
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+        stopTrackingAutoRefresh();
+    } else if (activeTrackingId) {
+        startTrackingAutoRefresh(activeTrackingId);
+        trackIncident({ silent: true });
+    }
+});
+
+
+// Stop polling when leaving the page.
+window.addEventListener("pagehide", stopTrackingAutoRefresh);
+
+
+// Safely display server-provided text.
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+
+// Submit an emergency report.
+async function submitReport() {
+    const report = document.getElementById("report").value.trim();
+    const location = document.getElementById("location").value.trim();
+    const resultBox = document.getElementById("result");
+    const submitButton = document.getElementById("submitButton");
+
+    if (!report || !location) {
+        alert("Please enter both the emergency description and location.");
+        return;
+    }
+
+    resultBox.style.display = "block";
+    resultBox.textContent = "⏳ Analyzing emergency report...";
+    submitButton.disabled = true;
+
+    try {
+        const response = await fetch(`${API_URL}/incidents`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                report,
+                location
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.incident_id) {
+            throw new Error(
+                data.detail || data.error || "Server error"
+            );
+        }
+
+        const resources = Array.isArray(data.recommended_resources)
+            ? data.recommended_resources
+            : [];
+
+        const analysis = data.analysis || {};
+
+        resultBox.innerHTML = `
+            <h3 class="success">✅ Emergency Report Submitted</h3>
+
+            <p><strong>Incident ID:</strong></p>
+            <p>${escapeHTML(data.incident_id)}</p>
+
+            <p class="muted">
+                Save this ID to track your rescue progress.
+            </p>
+
+            <p>
+                <strong>Disaster Type:</strong>
+                ${escapeHTML(analysis.disaster_type)}
+            </p>
+
+            <p>
+                <strong>Priority:</strong>
+                <span class="critical">
+                    ${escapeHTML(analysis.priority)}
+                </span>
+            </p>
+
+            <p>
+                <strong>Affected People:</strong>
+                ${escapeHTML(analysis.affected_people)}
+            </p>
+
+            <p>
+                <strong>Trapped People:</strong>
+                ${escapeHTML(analysis.trapped_people)}
+            </p>
+
+            <p>
+                <strong>Injured People:</strong>
+                ${escapeHTML(analysis.injured_people)}
+            </p>
+
+            <h4>Recommended Rescue Resources</h4>
+
+            <ul>
+                ${resources.map(resource =>
+                    `<li>${escapeHTML(resource)}</li>`
+                ).join("")}
+            </ul>
+
+            <button type="button" id="trackNewIncident">
+                Track This Incident
+            </button>
+        `;
+
+        // Automatically fill the tracking ID.
+        document.getElementById("trackingId").value =
+            data.incident_id;
+
+        // Allow the citizen to start tracking immediately.
+        document.getElementById("trackNewIncident").addEventListener(
+            "click",
+            () => trackIncident()
+        );
+
+    } catch (error) {
+        resultBox.textContent =
+            "❌ Unable to submit the report. Check that FastAPI and MongoDB are running.";
+
+        console.error("Report submission error:", error);
+
+    } finally {
+        submitButton.disabled = false;
+    }
+}
+
+
+// Retrieve and display incident status.
+async function trackIncident(options = {}) {
+    const silent = options.silent === true;
+
+    const incidentId = document
+        .getElementById("trackingId")
+        .value
+        .trim();
+
+    const resultBox = document.getElementById("trackingResult");
+    const trackButton = document.getElementById("trackButton");
+
+    if (!incidentId) {
+        stopTrackingAutoRefresh();
+        activeTrackingId = "";
+
+        if (!silent) {
+            alert("Please enter your Incident ID.");
+        }
+
+        return;
+    }
+
+    // Prevent overlapping requests.
+    if (trackingRequestInProgress) return;
+
+    // Stop the previous incident's polling if the ID changes.
+    if (activeTrackingId && activeTrackingId !== incidentId) {
+        stopTrackingAutoRefresh();
+    }
+
+    resultBox.style.display = "block";
+
+    if (!silent || !resultBox.innerHTML.trim()) {
+        resultBox.textContent =
+            "⏳ Retrieving your incident status...";
+    }
+
+    trackingRequestInProgress = true;
+    trackButton.disabled = true;
+
+    try {
+        // The existing backend returns all incidents.
+        // Find the incident matching the supplied ID.
+        const response = await fetch(`${API_URL}/incidents`);
+
+        if (!response.ok) {
+            throw new Error("Unable to retrieve incidents");
+        }
+
+        const incidents = await response.json();
+
+        const incident = incidents.find(item =>
+            String(item.id) === incidentId
+        );
+
+        if (!incident) {
+            stopTrackingAutoRefresh();
+            activeTrackingId = "";
+
+            resultBox.textContent =
+                "❌ Incident not found. Check the ID and try again.";
+
+            return;
+        }
+
+        let history = [];
+
+        try {
+            const historyResponse = await fetch(
+                `${API_URL}/incidents/${encodeURIComponent(incidentId)}/history`
+            );
+
+            if (historyResponse.ok) {
+                history = await historyResponse.json();
+            }
+        } catch (historyError) {
+            console.warn(
+                "Could not retrieve status history:",
+                historyError
+            );
+        }
+
+        renderTracking(incident, history);
+
+        // Start automatic refresh once tracking succeeds.
+        if (incident.status === "Completed") {
+            stopTrackingAutoRefresh();
+            activeTrackingId = incidentId;
+        } else {
+            startTrackingAutoRefresh(incidentId);
+        }
+
+    } catch (error) {
+        // Keep the last displayed status during a temporary
+        // backend problem when refreshing automatically.
+        if (!silent) {
+            resultBox.textContent =
+                "❌ Unable to retrieve tracking information. Check that the backend is running.";
+        }
+
+        console.error("Tracking error:", error);
+
+    } finally {
+        trackingRequestInProgress = false;
+        trackButton.disabled = false;
+    }
+}
+
+
+// Display the incident's current status and status history.
+function renderTracking(incident, history) {
+    const resultBox = document.getElementById("trackingResult");
+
+    const workflow = [
+        "Reported",
+        "Assigned",
+        "Accepted",
+        "On the Way",
+        "Rescuing",
+        "Completed"
+    ];
+
+    const currentIndex = workflow.indexOf(incident.status);
+
+    const timeline = workflow.map((status, index) => {
+        let stateClass = "";
+
+        if (currentIndex >= 0 && index < currentIndex) {
+            stateClass = "completed";
+        } else if (index === currentIndex) {
+            stateClass = "current";
+        }
+
+        const matchingHistory = history.find(
+            item => item.new_status === status
+        );
+
+        const timeText = matchingHistory
+            ? `<p class="muted">${escapeHTML(
+                formatIST(matchingHistory.updated_at)
+            )}</p>`
+            : "";
+
+        return `
+            <div class="timeline-item ${stateClass}">
+                <strong>${escapeHTML(status)}</strong>
+
+                ${index === currentIndex
+                    ? "<p>Current status</p>"
+                    : ""}
+
+                ${timeText}
+            </div>
+        `;
+    }).join("");
+
+    const statusDescription = incident.status === "Reported"
+        ? "Your report has been received and is awaiting rescue-team assignment."
+        : incident.status === "Assigned"
+        ? "A rescue team has been assigned to your incident."
+        : incident.status === "Accepted"
+        ? "The assigned team has accepted the incident."
+        : incident.status === "On the Way"
+        ? "The assigned team has reported that it is on the way."
+        : incident.status === "Rescuing"
+        ? "Rescue operations are in progress."
+        : incident.status === "Completed"
+        ? "The incident has been marked as completed."
+        : "Please contact the response authority for more information.";
+
+    const lastUpdated = new Date().toLocaleTimeString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    });
+
+    resultBox.innerHTML = `
+        <h3>📍 Incident Tracking</h3>
+
+        <p>
+            <strong>Incident ID:</strong>
+            ${escapeHTML(incident.id)}
+        </p>
+
+        <p>
+            <strong>Disaster:</strong>
+            ${escapeHTML(incident.disaster_type)}
+        </p>
+
+        <p>
+            <strong>Location:</strong>
+            ${escapeHTML(incident.location)}
+        </p>
+
+        <p>
+            <strong>Priority:</strong>
+            ${escapeHTML(incident.priority)}
+        </p>
+
+        <p>
+            <strong>Current Status:</strong>
+            ${escapeHTML(incident.status)}
+        </p>
+
+        <p>${escapeHTML(statusDescription)}</p>
+
+        <h4>Rescue Progress Timeline</h4>
+
+        <div class="timeline">
+            ${timeline}
+        </div>
+
+        <p class="muted">
+            Last checked: ${escapeHTML(lastUpdated)} IST
+        </p>
+
+        <p class="muted">
+            Status refreshes automatically every 5 seconds while this page is visible.
+        </p>
+
+        <button type="button" id="refreshTracking">
+            Refresh Status
+        </button>
+    `;
+
+    document.getElementById("refreshTracking").addEventListener(
+        "click",
+        () => trackIncident()
+    );
+}
+</script>
+
+</body>
+</html>

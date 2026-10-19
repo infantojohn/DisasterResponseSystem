@@ -1,0 +1,424 @@
+report,disaster_type,affected_people,trapped_people,injured_people,priority
+15 people are trapped inside a flooded house and 2 are injured,Flood,15.0,15.0,2.0,Critical
+Heavy flooding has entered several houses but nobody is injured,Flood,8.0,0.0,0.0,Medium
+Three people are stranded on the roof because of rising flood water,Flood,3.0,3.0,0.0,High
+Flood water is covering the road and vehicles cannot pass,Flood,0.0,0.0,0.0,Medium
+Twenty people are trapped in a flooded building and several are injured,Flood,20.0,20.0,6.0,Critical
+Minor flooding reported near residential area with no casualties,Flood,5.0,0.0,0.0,Low
+Building collapsed and many people are trapped under the debris,Building Collapse,18.0,12.0,5.0,Critical
+A building partially collapsed and two people suffered injuries,Building Collapse,6.0,0.0,2.0,High
+Old wall collapsed but nobody was injured,Building Collapse,2.0,0.0,0.0,Low
+Several people are trapped after a building collapse,Building Collapse,10.0,8.0,3.0,Critical
+Road blocked after a small landslide,Landslide,3.0,0.0,0.0,Low
+Large landslide has blocked the highway and people are stranded,Landslide,12.0,4.0,1.0,High
+Major landslide buried houses and several people are trapped,Landslide,20.0,15.0,5.0,Critical
+Small rocks have fallen onto the road,Landslide,1.0,0.0,0.0,Low
+Heavy rain caused a landslide near several houses,Landslide,8.0,2.0,0.0,Medium
+Strong cyclone winds damaged houses and injured six people,Cyclone,10.0,0.0,6.0,High
+Severe cyclone has destroyed houses and trapped several residents,Cyclone,25.0,12.0,5.0,Critical
+Strong winds damaged a few roofs but there are no injuries,Cyclone,5.0,0.0,0.0,Medium
+Heavy rain and strong winds reported in the coastal area,Cyclone,4.0,0.0,0.0,Low
+Several people are injured after cyclone debris hit their homes,Cyclone,9.0,0.0,7.0,High
+Ten people are trapped inside a collapsed structure,Building Collapse,10.0,10.0,2.0,Critical
+One person injured after a wall collapsed,Building Collapse,2.0,0.0,1.0,Medium
+Water level is rising rapidly and families are unable to leave their homes,Flood,12.0,10.0,0.0,High
+Flood water entered a school and students are stranded,Flood,30.0,30.0,2.0,Critical
+Minor waterlogging reported on a local road,Flood,2.0,0.0,0.0,Low
+People are stranded after a bridge was damaged by flooding,Flood,15.0,8.0,1.0,High
+Large landslide has isolated a village from the main road,Landslide,50.0,0.0,2.0,High
+Rockfall blocked a small road with no reported injuries,Landslide,2.0,0.0,0.0,Low
+Several houses damaged by cyclone and three people are injured,Cyclone,12.0,0.0,3.0,High
+Extremely strong winds have trapped families inside damaged houses,Cyclone,20.0,10.0,4.0,Critical
+Light cyclone damage reported with no casualties,Cyclone,4.0,0.0,0.0,Low
+Emergency team reports five injured people after a building collapse,Building Collapse,8.0,2.0,5.0,High
+Minor flooding reported near a residential area with no casualties,Flood,5.0,0.0,0.0,Low
+Small amount of flood water reported near a densely populated neighborhood,Flood,1.0,0.0,0.0,Low
+Light waterlogging observed around a nearby town,Flood,5.0,0.0,0.0,Low
+Minor flooding affecting a few houses near the coastal region,Flood,4.0,0.0,0.0,Low
+Flood water has reached the roadside near a village but no injuries reported,Flood,0.0,0.0,0.0,Low
+Minor flooding reported near a highway area with no casualties,Flood,1.0,0.0,0.0,Low
+Minor flooding affecting a few houses near a residential area,Flood,4.0,0.0,0.0,Low
+Light waterlogging observed around a roadside settlement,Flood,1.0,0.0,0.0,Low
+Flood water has reached the roadside near a low-lying area but no injuries reported,Flood,0.0,0.0,0.0,Low
+Small amount of flood water reported near a rural area,Flood,1.0,0.0,0.0,Low
+Small amount of flood water reported near a nearby town,Flood,0.0,0.0,0.0,Low
+Flood water has reached the roadside near a nearby town but no injuries reported,Flood,2.0,0.0,0.0,Low
+Small amount of flood water reported near a low-lying area,Flood,0.0,0.0,0.0,Low
+Minor flooding reported near a remote village with no casualties,Flood,5.0,0.0,0.0,Low
+Minor flooding affecting a few houses near a market area,Flood,4.0,0.0,0.0,Low
+Light waterlogging observed around the coastal region,Flood,0.0,0.0,0.0,Low
+Light waterlogging observed around a remote village,Flood,0.0,0.0,0.0,Low
+Rising flood water is affecting homes around a hill-side village,Flood,8.0,0.0,1.0,Medium
+Rising flood water is affecting homes around a highway area,Flood,7.0,2.0,2.0,Medium
+Flood water has entered several houses near the city outskirts,Flood,11.0,2.0,0.0,Medium
+Moderate flooding reported in a hill-side village and some residents need assistance,Flood,9.0,1.0,2.0,Medium
+Flooding has disrupted movement in a densely populated neighborhood and residents are stranded,Flood,8.0,0.0,0.0,Medium
+Flood water has entered several houses near the local district,Flood,9.0,1.0,0.0,Medium
+Moderate flooding reported in the local district and some residents need assistance,Flood,6.0,2.0,1.0,Medium
+Several roads are blocked by flood water near a hill-side village,Flood,5.0,1.0,0.0,Medium
+Moderate flooding reported in a low-lying area and some residents need assistance,Flood,12.0,1.0,2.0,Medium
+Several roads are blocked by flood water near a market area,Flood,6.0,0.0,2.0,Medium
+Several roads are blocked by flood water near the coastal region,Flood,3.0,0.0,0.0,Medium
+Moderate flooding reported in a roadside settlement and some residents need assistance,Flood,12.0,0.0,1.0,Medium
+Flood water has entered several houses near a nearby town,Flood,11.0,1.0,2.0,Medium
+Rising flood water is affecting homes around a nearby town,Flood,7.0,1.0,0.0,Medium
+Several roads are blocked by flood water near a residential area,Flood,7.0,2.0,0.0,Medium
+Flooding has disrupted movement in a nearby town and residents are stranded,Flood,7.0,2.0,2.0,Medium
+Flooding has disrupted movement in a highway area and residents are stranded,Flood,5.0,1.0,0.0,Medium
+Flooding has disrupted movement in a residential area and residents are stranded,Flood,12.0,1.0,1.0,Medium
+Rapidly rising flood water has stranded families near a densely populated neighborhood,Flood,10.0,3.0,6.0,High
+People are stranded on rooftops after severe flooding in the coastal region,Flood,25.0,4.0,2.0,High
+People are stranded on rooftops after severe flooding in the city outskirts,Flood,16.0,10.0,5.0,High
+People are stranded on rooftops after severe flooding in a highway area,Flood,25.0,5.0,6.0,High
+Flood water has isolated a residential area near a school zone,Flood,19.0,9.0,5.0,High
+People are stranded on rooftops after severe flooding in a nearby town,Flood,15.0,5.0,1.0,High
+Flood water has isolated a residential area near a residential area,Flood,25.0,5.0,5.0,High
+Several residents are unable to leave their homes because of flooding in a residential area,Flood,10.0,2.0,2.0,High
+Rapidly rising flood water has stranded families near a village,Flood,18.0,3.0,5.0,High
+Several residents are unable to leave their homes because of flooding in a low-lying area,Flood,23.0,5.0,5.0,High
+Several residents are unable to leave their homes because of flooding in the town center,Flood,15.0,9.0,4.0,High
+Several residents are unable to leave their homes because of flooding in a nearby town,Flood,11.0,8.0,3.0,High
+People are stranded on rooftops after severe flooding in a roadside settlement,Flood,22.0,2.0,6.0,High
+Several residents are unable to leave their homes because of flooding in a highway area,Flood,14.0,10.0,4.0,High
+Several residents are unable to leave their homes because of flooding in a roadside settlement,Flood,13.0,6.0,4.0,High
+Several residents are unable to leave their homes because of flooding in the coastal region,Flood,22.0,10.0,1.0,High
+Rapidly rising flood water has stranded families near a residential area,Flood,10.0,5.0,2.0,High
+People are stranded on rooftops after severe flooding in the town center,Flood,23.0,5.0,4.0,High
+Rapidly rising flood water has stranded families near the city outskirts,Flood,20.0,2.0,4.0,High
+Flood water has entered a school in a hill-side village and many students are stranded,Flood,24.0,21.0,10.0,Critical
+Severe flooding has trapped families inside buildings near a highway area,Flood,24.0,14.0,3.0,Critical
+Major flooding has submerged houses in a village and injured residents,Flood,38.0,18.0,3.0,Critical
+Many people are trapped inside flooded houses in the town center and several are injured,Flood,31.0,24.0,5.0,Critical
+Many people are trapped inside flooded houses in the coastal region and several are injured,Flood,20.0,10.0,4.0,Critical
+Severe flooding has trapped families inside buildings near a school zone,Flood,18.0,15.0,3.0,Critical
+Major flooding has submerged houses in the coastal region and injured residents,Flood,28.0,24.0,8.0,Critical
+Flood water has entered a school in a highway area and many students are stranded,Flood,36.0,18.0,6.0,Critical
+Flood water has entered a school in a school zone and many students are stranded,Flood,19.0,17.0,10.0,Critical
+Flood water has entered a school in the coastal region and many students are stranded,Flood,15.0,22.0,4.0,Critical
+Many people are trapped inside flooded houses in a highway area and several are injured,Flood,31.0,16.0,5.0,Critical
+Severe flooding has trapped families inside buildings near a hill-side village,Flood,32.0,17.0,3.0,Critical
+Major flooding has submerged houses in a remote village and injured residents,Flood,36.0,11.0,5.0,Critical
+Flood water has entered a school in a nearby town and many students are stranded,Flood,18.0,25.0,5.0,Critical
+Flood water has entered a school in a remote village and many students are stranded,Flood,34.0,14.0,8.0,Critical
+Severe flooding has trapped families inside buildings near a low-lying area,Flood,31.0,23.0,7.0,Critical
+Many people are trapped inside flooded houses in a residential area and several are injured,Flood,25.0,12.0,7.0,Critical
+Light cyclone damage reported in the coastal region with no casualties,Cyclone,5.0,0.0,0.0,Low
+Strong winds caused minor roof damage near a village,Cyclone,2.0,0.0,0.0,Low
+Light rain and winds reported in a rural area with no injuries,Cyclone,3.0,0.0,0.0,Low
+Minor cyclone damage reported around a village,Cyclone,2.0,0.0,0.0,Low
+Strong winds caused minor roof damage near a densely populated neighborhood,Cyclone,5.0,0.0,0.0,Low
+Light cyclone damage reported in a market area with no casualties,Cyclone,4.0,0.0,0.0,Low
+A few trees were damaged by cyclone winds near a rural area,Cyclone,1.0,0.0,0.0,Low
+Strong winds caused minor roof damage near the city outskirts,Cyclone,3.0,0.0,0.0,Low
+Light cyclone damage reported in the city outskirts with no casualties,Cyclone,5.0,0.0,0.0,Low
+Minor cyclone damage reported around a roadside settlement,Cyclone,5.0,0.0,0.0,Low
+Strong winds caused minor roof damage near a low-lying area,Cyclone,1.0,0.0,0.0,Low
+Light cyclone damage reported in a school zone with no casualties,Cyclone,0.0,0.0,0.0,Low
+A few trees were damaged by cyclone winds near a densely populated neighborhood,Cyclone,1.0,0.0,0.0,Low
+A few trees were damaged by cyclone winds near a market area,Cyclone,2.0,0.0,0.0,Low
+Strong winds caused minor roof damage near a school zone,Cyclone,2.0,0.0,0.0,Low
+Minor cyclone damage reported around the coastal region,Cyclone,2.0,0.0,0.0,Low
+Minor cyclone damage reported around a school zone,Cyclone,5.0,0.0,0.0,Low
+Light rain and winds reported in the local district with no injuries,Cyclone,0.0,0.0,0.0,Low
+Strong cyclone winds damaged several roofs in a low-lying area,Cyclone,5.0,2.0,1.0,Medium
+Strong cyclone winds damaged several roofs in a nearby town,Cyclone,12.0,1.0,1.0,Medium
+Heavy rain and strong winds are affecting residents in a roadside settlement,Cyclone,12.0,2.0,0.0,Medium
+Several roads are blocked by cyclone debris in a highway area,Cyclone,7.0,0.0,2.0,Medium
+Several roads are blocked by cyclone debris in a residential area,Cyclone,11.0,2.0,2.0,Medium
+Cyclone conditions have damaged homes around a market area,Cyclone,9.0,0.0,2.0,Medium
+Heavy rain and strong winds are affecting residents in the local district,Cyclone,4.0,2.0,1.0,Medium
+Moderate cyclone damage reported in a remote village and residents need assistance,Cyclone,9.0,1.0,1.0,Medium
+Heavy rain and strong winds are affecting residents in a rural area,Cyclone,6.0,1.0,2.0,Medium
+Several roads are blocked by cyclone debris in the city outskirts,Cyclone,12.0,2.0,1.0,Medium
+Several roads are blocked by cyclone debris in the local district,Cyclone,10.0,1.0,1.0,Medium
+Cyclone conditions have damaged homes around the town center,Cyclone,5.0,2.0,0.0,Medium
+Heavy rain and strong winds are affecting residents in a densely populated neighborhood,Cyclone,6.0,0.0,0.0,Medium
+Strong cyclone winds damaged several roofs in a densely populated neighborhood,Cyclone,10.0,2.0,0.0,Medium
+Several roads are blocked by cyclone debris in a roadside settlement,Cyclone,12.0,0.0,2.0,Medium
+Several roads are blocked by cyclone debris in the town center,Cyclone,9.0,0.0,0.0,Medium
+Moderate cyclone damage reported in a hill-side village and residents need assistance,Cyclone,3.0,2.0,0.0,Medium
+Severe cyclone winds damaged houses and injured residents in a hill-side village,Cyclone,12.0,9.0,6.0,High
+Severe winds have left several families stranded in the local district,Cyclone,22.0,10.0,4.0,High
+Severe winds have left several families stranded in a hill-side village,Cyclone,13.0,9.0,4.0,High
+Strong cyclone winds have damaged multiple buildings in a densely populated neighborhood,Cyclone,16.0,10.0,4.0,High
+Several people were injured by falling debris during the cyclone in a low-lying area,Cyclone,22.0,3.0,6.0,High
+Severe winds have left several families stranded in the coastal region,Cyclone,12.0,4.0,2.0,High
+Cyclone debris has blocked roads and injured several people near a rural area,Cyclone,14.0,3.0,4.0,High
+Cyclone debris has blocked roads and injured several people near the local district,Cyclone,25.0,9.0,4.0,High
+Severe cyclone winds damaged houses and injured residents in a highway area,Cyclone,21.0,8.0,5.0,High
+Severe cyclone winds damaged houses and injured residents in a school zone,Cyclone,23.0,2.0,3.0,High
+Strong cyclone winds have damaged multiple buildings in a school zone,Cyclone,21.0,10.0,6.0,High
+Severe winds have left several families stranded in a densely populated neighborhood,Cyclone,23.0,5.0,3.0,High
+Cyclone debris has blocked roads and injured several people near the town center,Cyclone,8.0,8.0,3.0,High
+Cyclone debris has blocked roads and injured several people near the city outskirts,Cyclone,22.0,4.0,5.0,High
+Severe winds have left several families stranded in a residential area,Cyclone,20.0,2.0,1.0,High
+Strong cyclone winds have damaged multiple buildings in the local district,Cyclone,20.0,6.0,4.0,High
+Strong cyclone winds have damaged multiple buildings in the coastal region,Cyclone,23.0,2.0,6.0,High
+A major cyclone has caused widespread destruction and trapped residents in a village,Cyclone,26.0,15.0,4.0,Critical
+Severe cyclone has destroyed houses and trapped several residents in a residential area,Cyclone,22.0,14.0,3.0,Critical
+A major cyclone has caused widespread destruction and trapped residents in a rural area,Cyclone,22.0,12.0,10.0,Critical
+Severe cyclone has destroyed houses and trapped several residents in a highway area,Cyclone,29.0,16.0,8.0,Critical
+Extremely strong winds have trapped families inside damaged houses in a nearby town,Cyclone,39.0,13.0,7.0,Critical
+Extremely strong winds have trapped families inside damaged houses in the coastal region,Cyclone,33.0,15.0,4.0,Critical
+Cyclone damage has caused multiple injuries and trapped people in a nearby town,Cyclone,40.0,9.0,8.0,Critical
+A major cyclone has caused widespread destruction and trapped residents in a roadside settlement,Cyclone,36.0,19.0,4.0,Critical
+A major cyclone has caused widespread destruction and trapped residents in the local district,Cyclone,15.0,21.0,10.0,Critical
+Severe cyclone has destroyed houses and trapped several residents in a roadside settlement,Cyclone,26.0,22.0,5.0,Critical
+Several buildings collapsed during the cyclone and people are trapped in the city outskirts,Cyclone,38.0,24.0,7.0,Critical
+A major cyclone has caused widespread destruction and trapped residents in the town center,Cyclone,29.0,21.0,7.0,Critical
+Cyclone damage has caused multiple injuries and trapped people in a densely populated neighborhood,Cyclone,17.0,16.0,10.0,Critical
+Extremely strong winds have trapped families inside damaged houses in a hill-side village,Cyclone,33.0,20.0,8.0,Critical
+Severe cyclone has destroyed houses and trapped several residents in the town center,Cyclone,25.0,13.0,10.0,Critical
+Extremely strong winds have trapped families inside damaged houses in a market area,Cyclone,40.0,16.0,8.0,Critical
+Cyclone damage has caused multiple injuries and trapped people in a low-lying area,Cyclone,32.0,8.0,6.0,Critical
+Severe cyclone has destroyed houses and trapped several residents in a densely populated neighborhood,Cyclone,38.0,21.0,10.0,Critical
+A major cyclone has caused widespread destruction and trapped residents in a densely populated neighborhood,Cyclone,37.0,23.0,10.0,Critical
+Light soil movement reported near a residential area with no injuries,Landslide,0.0,0.0,0.0,Low
+Small rockfall has partially blocked a road in a densely populated neighborhood,Landslide,3.0,0.0,0.0,Low
+Minor landslide reported on a local road near a remote village,Landslide,5.0,0.0,0.0,Low
+Minor landslide debris is blocking part of the road near a market area,Landslide,3.0,0.0,0.0,Low
+Minor landslide debris is blocking part of the road near the local district,Landslide,2.0,0.0,0.0,Low
+Light soil movement reported near a low-lying area with no injuries,Landslide,2.0,0.0,0.0,Low
+Minor landslide reported on a local road near the local district,Landslide,0.0,0.0,0.0,Low
+Minor landslide debris is blocking part of the road near the city outskirts,Landslide,1.0,0.0,0.0,Low
+Minor landslide reported on a local road near the town center,Landslide,2.0,0.0,0.0,Low
+Minor landslide debris is blocking part of the road near a remote village,Landslide,0.0,0.0,0.0,Low
+Small rockfall has partially blocked a road in the city outskirts,Landslide,2.0,0.0,0.0,Low
+Small rocks have fallen onto the road near a rural area,Landslide,2.0,0.0,0.0,Low
+Small rocks have fallen onto the road near a village,Landslide,4.0,0.0,0.0,Low
+Small rockfall has partially blocked a road in a rural area,Landslide,5.0,0.0,0.0,Low
+Light soil movement reported near a nearby town with no injuries,Landslide,0.0,0.0,0.0,Low
+Light soil movement reported near a hill-side village with no injuries,Landslide,2.0,0.0,0.0,Low
+A moderate landslide has blocked a road near a village,Landslide,7.0,1.0,0.0,Medium
+Heavy rain caused a landslide near several houses in a school zone,Landslide,10.0,0.0,2.0,Medium
+Heavy rain caused a landslide near several houses in a rural area,Landslide,5.0,2.0,1.0,Medium
+Heavy rain caused a landslide near several houses in a densely populated neighborhood,Landslide,4.0,2.0,1.0,Medium
+Several residents are affected by a landslide near a densely populated neighborhood,Landslide,11.0,1.0,1.0,Medium
+A landslide has disrupted road access around a remote village,Landslide,12.0,1.0,1.0,Medium
+Several residents are affected by a landslide near a village,Landslide,12.0,2.0,0.0,Medium
+A moderate landslide has blocked a road near a highway area,Landslide,7.0,2.0,0.0,Medium
+A moderate landslide has blocked a road near a densely populated neighborhood,Landslide,5.0,2.0,0.0,Medium
+A moderate landslide has blocked a road near a residential area,Landslide,9.0,1.0,2.0,Medium
+Several residents are affected by a landslide near the town center,Landslide,7.0,0.0,0.0,Medium
+Landslide debris has affected several houses in a remote village,Landslide,10.0,0.0,2.0,Medium
+A moderate landslide has blocked a road near a low-lying area,Landslide,12.0,2.0,0.0,Medium
+A landslide has disrupted road access around a nearby town,Landslide,11.0,0.0,2.0,Medium
+A moderate landslide has blocked a road near a remote village,Landslide,12.0,2.0,2.0,Medium
+Landslide debris has affected several houses in a hill-side village,Landslide,4.0,1.0,2.0,Medium
+Landslide debris has affected several houses in a school zone,Landslide,7.0,2.0,2.0,Medium
+A landslide has disrupted road access around a hill-side village,Landslide,4.0,2.0,0.0,Medium
+A landslide has disrupted road access around the local district,Landslide,12.0,1.0,0.0,Medium
+Large landslide has blocked the highway near a densely populated neighborhood and people are stranded,Landslide,8.0,6.0,5.0,High
+Large landslide has blocked the highway near the city outskirts and people are stranded,Landslide,23.0,10.0,6.0,High
+Landslide debris has blocked the main road and stranded residents in a low-lying area,Landslide,13.0,8.0,6.0,High
+Landslide debris has blocked the main road and stranded residents in the coastal region,Landslide,23.0,7.0,4.0,High
+Several houses are threatened by a large landslide in the local district,Landslide,11.0,4.0,3.0,High
+Landslide debris has blocked the main road and stranded residents in the town center,Landslide,17.0,8.0,5.0,High
+Large landslide has blocked the highway near a hill-side village and people are stranded,Landslide,10.0,7.0,3.0,High
+Several houses are threatened by a large landslide in a nearby town,Landslide,20.0,10.0,1.0,High
+A major landslide has isolated several families near a hill-side village,Landslide,21.0,2.0,2.0,High
+A major landslide has isolated several families near a market area,Landslide,23.0,9.0,1.0,High
+Major landslide has isolated a village near a low-lying area,Landslide,25.0,4.0,3.0,High
+A major landslide has isolated several families near a densely populated neighborhood,Landslide,13.0,6.0,5.0,High
+Large landslide has blocked the highway near a roadside settlement and people are stranded,Landslide,10.0,5.0,1.0,High
+Landslide debris has blocked the main road and stranded residents in a nearby town,Landslide,12.0,9.0,6.0,High
+Several houses are threatened by a large landslide in a low-lying area,Landslide,21.0,9.0,4.0,High
+Major landslide has isolated a village near a hill-side village,Landslide,25.0,4.0,4.0,High
+Major landslide has isolated a village near a rural area,Landslide,10.0,6.0,4.0,High
+Several houses are threatened by a large landslide in the town center,Landslide,12.0,9.0,5.0,High
+A massive landslide has destroyed houses and injured residents in a market area,Landslide,25.0,25.0,9.0,Critical
+A massive landslide has destroyed houses and injured residents in the local district,Landslide,21.0,15.0,9.0,Critical
+Large landslide has buried buildings and trapped residents near a roadside settlement,Landslide,16.0,18.0,10.0,Critical
+A massive landslide has destroyed houses and injured residents in a school zone,Landslide,36.0,12.0,10.0,Critical
+Major landslide buried houses and several people are trapped in a rural area,Landslide,31.0,18.0,4.0,Critical
+A massive landslide has destroyed houses and injured residents in a nearby town,Landslide,31.0,22.0,3.0,Critical
+A massive landslide has destroyed houses and injured residents in a low-lying area,Landslide,25.0,20.0,4.0,Critical
+Several people are trapped under landslide debris in a school zone,Landslide,25.0,23.0,3.0,Critical
+Landslide debris has buried homes and trapped multiple people near the coastal region,Landslide,22.0,17.0,6.0,Critical
+Major landslide buried houses and several people are trapped in a roadside settlement,Landslide,18.0,11.0,10.0,Critical
+Large landslide has buried buildings and trapped residents near a remote village,Landslide,15.0,9.0,8.0,Critical
+Major landslide buried houses and several people are trapped in a remote village,Landslide,26.0,19.0,9.0,Critical
+Large landslide has buried buildings and trapped residents near a densely populated neighborhood,Landslide,31.0,21.0,5.0,Critical
+Large landslide has buried buildings and trapped residents near the city outskirts,Landslide,17.0,20.0,6.0,Critical
+A massive landslide has destroyed houses and injured residents in a rural area,Landslide,22.0,22.0,7.0,Critical
+Several people are trapped under landslide debris in the city outskirts,Landslide,17.0,22.0,8.0,Critical
+Landslide debris has buried homes and trapped multiple people near a remote village,Landslide,35.0,21.0,7.0,Critical
+A massive landslide has destroyed houses and injured residents in a remote village,Landslide,21.0,20.0,10.0,Critical
+Old wall collapsed near a densely populated neighborhood but nobody was injured,Building Collapse,3.0,0.0,0.0,Low
+Minor building damage reported in a market area with no trapped people,Building Collapse,4.0,0.0,0.0,Low
+A small section of a wall collapsed in a remote village with no casualties,Building Collapse,0.0,0.0,0.0,Low
+Part of an old structure collapsed near a low-lying area without injuries,Building Collapse,0.0,0.0,0.0,Low
+Minor building damage reported in a village with no trapped people,Building Collapse,4.0,0.0,0.0,Low
+Part of an old structure collapsed near a remote village without injuries,Building Collapse,1.0,0.0,0.0,Low
+Minor structural damage reported at a building in a low-lying area,Building Collapse,5.0,0.0,0.0,Low
+Minor structural damage reported at a building in a nearby town,Building Collapse,5.0,0.0,0.0,Low
+Old wall collapsed near a remote village but nobody was injured,Building Collapse,3.0,0.0,0.0,Low
+Old wall collapsed near a market area but nobody was injured,Building Collapse,5.0,0.0,0.0,Low
+Minor structural damage reported at a building in the coastal region,Building Collapse,2.0,0.0,0.0,Low
+A small section of a wall collapsed in a roadside settlement with no casualties,Building Collapse,1.0,0.0,0.0,Low
+Minor structural damage reported at a building in a rural area,Building Collapse,4.0,0.0,0.0,Low
+A small section of a wall collapsed in a low-lying area with no casualties,Building Collapse,1.0,0.0,0.0,Low
+A small section of a wall collapsed in the town center with no casualties,Building Collapse,2.0,0.0,0.0,Low
+A small section of a wall collapsed in a nearby town with no casualties,Building Collapse,3.0,0.0,0.0,Low
+Old wall collapsed near a rural area but nobody was injured,Building Collapse,1.0,0.0,0.0,Low
+Part of an old structure collapsed near a market area without injuries,Building Collapse,0.0,0.0,0.0,Low
+Part of an old structure collapsed near a residential area without injuries,Building Collapse,2.0,0.0,0.0,Low
+A damaged building partially collapsed in a nearby town,Building Collapse,10.0,1.0,2.0,Medium
+A building has partially collapsed in a school zone and residents need assistance,Building Collapse,8.0,0.0,2.0,Medium
+Part of a building collapsed near the town center causing minor injuries,Building Collapse,3.0,2.0,2.0,Medium
+A building has partially collapsed in a densely populated neighborhood and residents need assistance,Building Collapse,4.0,2.0,1.0,Medium
+A building has partially collapsed in a roadside settlement and residents need assistance,Building Collapse,4.0,0.0,0.0,Medium
+A wall collapsed and one person was injured in a remote village,Building Collapse,10.0,0.0,0.0,Medium
+Part of a building collapsed near a rural area causing minor injuries,Building Collapse,9.0,1.0,1.0,Medium
+A damaged building partially collapsed in a roadside settlement,Building Collapse,12.0,2.0,2.0,Medium
+Part of a building collapsed near a roadside settlement causing minor injuries,Building Collapse,4.0,1.0,2.0,Medium
+Structural damage reported at a building in a low-lying area with one injured person,Building Collapse,3.0,2.0,1.0,Medium
+Part of a building collapsed near a hill-side village causing minor injuries,Building Collapse,10.0,0.0,1.0,Medium
+A wall collapsed and one person was injured in a market area,Building Collapse,11.0,2.0,1.0,Medium
+A wall collapsed and one person was injured in a school zone,Building Collapse,7.0,0.0,0.0,Medium
+Structural damage reported at a building in the coastal region with one injured person,Building Collapse,6.0,2.0,2.0,Medium
+A damaged building partially collapsed in a residential area,Building Collapse,3.0,1.0,0.0,Medium
+Part of a building collapsed near a highway area causing minor injuries,Building Collapse,4.0,2.0,0.0,Medium
+A damaged building partially collapsed in a highway area,Building Collapse,6.0,1.0,0.0,Medium
+A damaged building partially collapsed in a low-lying area,Building Collapse,5.0,0.0,2.0,Medium
+A wall collapsed and one person was injured in a rural area,Building Collapse,3.0,1.0,0.0,Medium
+Building debris has injured several people in the local district,Building Collapse,8.0,4.0,3.0,High
+A building partially collapsed and several people were injured in a rural area,Building Collapse,21.0,10.0,1.0,High
+A building partially collapsed and several people were injured in the town center,Building Collapse,22.0,7.0,5.0,High
+Building debris has injured several people in a nearby town,Building Collapse,22.0,10.0,2.0,High
+Building debris has injured several people in a village,Building Collapse,24.0,6.0,4.0,High
+A building partially collapsed and several people were injured in a village,Building Collapse,23.0,8.0,4.0,High
+A collapsed structure has injured residents and blocked access in a rural area,Building Collapse,10.0,4.0,3.0,High
+Part of a building collapsed and residents are trapped near a roadside settlement,Building Collapse,11.0,3.0,6.0,High
+Building debris has injured several people in a highway area,Building Collapse,21.0,9.0,2.0,High
+Part of a building collapsed and residents are trapped near the local district,Building Collapse,22.0,8.0,4.0,High
+A building partially collapsed and several people were injured in the local district,Building Collapse,21.0,7.0,6.0,High
+A collapsed structure has injured residents and blocked access in a market area,Building Collapse,12.0,9.0,1.0,High
+A building partially collapsed and several people were injured in the coastal region,Building Collapse,10.0,8.0,1.0,High
+Part of a building collapsed and residents are trapped near a village,Building Collapse,17.0,6.0,3.0,High
+A building partially collapsed and several people were injured in a highway area,Building Collapse,12.0,9.0,2.0,High
+A building partially collapsed and several people were injured in a market area,Building Collapse,25.0,7.0,1.0,High
+A large building has collapsed and injured people are trapped inside a densely populated neighborhood,Building Collapse,40.0,21.0,3.0,Critical
+Major building collapse has buried residents under debris in a low-lying area,Building Collapse,15.0,13.0,7.0,Critical
+A large building has collapsed and injured people are trapped inside the local district,Building Collapse,26.0,8.0,5.0,Critical
+Several people are trapped after a major building collapse in a school zone,Building Collapse,17.0,12.0,3.0,Critical
+Building collapsed and many people are trapped under the debris in a highway area,Building Collapse,27.0,21.0,10.0,Critical
+A large building has collapsed and injured people are trapped inside the city outskirts,Building Collapse,26.0,17.0,8.0,Critical
+Major building collapse has buried residents under debris in the coastal region,Building Collapse,16.0,12.0,5.0,Critical
+Major building collapse has buried residents under debris in a village,Building Collapse,36.0,10.0,7.0,Critical
+Multiple people are trapped under a collapsed structure in a roadside settlement,Building Collapse,30.0,22.0,9.0,Critical
+A large building has collapsed and injured people are trapped inside a highway area,Building Collapse,39.0,24.0,4.0,Critical
+A large building has collapsed and injured people are trapped inside a roadside settlement,Building Collapse,18.0,17.0,10.0,Critical
+Major building collapse has buried residents under debris in a remote village,Building Collapse,16.0,15.0,9.0,Critical
+Several people are trapped after a major building collapse in a rural area,Building Collapse,39.0,16.0,7.0,Critical
+A large building has collapsed and injured people are trapped inside a nearby town,Building Collapse,15.0,23.0,9.0,Critical
+Major building collapse has buried residents under debris in a market area,Building Collapse,17.0,20.0,3.0,Critical
+Multiple people are trapped under a collapsed structure in a residential area,Building Collapse,29.0,10.0,8.0,Critical
+Major building collapse has buried residents under debris in a roadside settlement,Building Collapse,33.0,20.0,9.0,Critical
+A small fire started in a kitchen.,Fire,,,,
+There is a fire in a residential kitchen.,Fire,,,,
+A kitchen fire has started in an apartment.,Fire,,,,
+Smoke and flames are coming from a house.,Fire,,,,
+A house is on fire in the residential area.,Fire,,,,
+A fire has started inside a nearby building.,Fire,,,,
+A building is burning and people need help.,Fire,,,,
+Fire has broken out in a residential building.,Fire,,,,
+A large fire is spreading through several rooms.,Fire,,,,
+Flames are spreading through a house.,Fire,,,,
+A fire started because of an electrical short circuit.,Fire,,,,
+An electrical fire has started inside a house.,Fire,,,,
+There is an electrical fire in an apartment.,Fire,,,,
+A short circuit caused a fire in the building.,Fire,,,,
+An electrical panel caught fire.,Fire,,,,
+A kitchen appliance caused a fire.,Fire,,,,
+A gas stove caused a kitchen fire.,Fire,,,,
+A gas leak has caused a fire in the kitchen.,Fire,,,,
+A cooking accident caused a fire.,Fire,,,,
+A stove caught fire inside a house.,Fire,,,,
+A shop has caught fire.,Fire,,,,
+There is a fire inside a local shop.,Fire,,,,
+A commercial building is on fire.,Fire,,,,
+Fire is spreading through a shopping area.,Fire,,,,
+A warehouse has caught fire.,Fire,,,,
+A factory building is burning.,Fire,,,,
+Smoke is coming from a factory because of a fire.,Fire,,,,
+A fire has started in a warehouse.,Fire,,,,
+A restaurant has caught fire.,Fire,,,,
+There is a fire inside a restaurant kitchen.,Fire,,,,
+A school building has caught fire.,Fire,,,,
+Fire has broken out inside a school.,Fire,,,,
+A hospital building has caught fire.,Fire,,,,
+A fire has started in an office building.,Fire,,,,
+An office is filled with smoke due to a fire.,Fire,,,,
+A vehicle caught fire on the road.,Fire,,,,
+A car is burning near the highway.,Fire,,,,
+A bus has caught fire.,Fire,,,,
+A truck caught fire on the road.,Fire,,,,
+A motorcycle caught fire near a residential area.,Fire,,,,
+A fire has started in a parking area.,Fire,,,,
+Several vehicles are on fire.,Fire,,,,
+A forest fire is spreading rapidly.,Fire,,,,
+A wildfire has started near the forest.,Fire,,,,
+Fire is spreading through dry vegetation.,Fire,,,,
+A forest area is burning.,Fire,,,,
+Smoke from a wildfire is covering the area.,Fire,,,,
+A grassland fire is spreading.,Fire,,,,
+A fire has started near the village forest.,Fire,,,,
+Flames are spreading through dry grass.,Fire,,,,
+A large wildfire is approaching nearby houses.,Fire,,,,
+A fire is spreading toward the residential area.,Fire,,,,
+Several houses are threatened by a nearby fire.,Fire,,,,
+A major fire has broken out in the neighborhood.,Fire,,,,
+Fire is spreading between buildings.,Fire,,,,
+A large building fire is out of control.,Fire,,,,
+A residential fire has trapped people inside.,Fire,,,,
+Several people are trapped inside a burning building.,Fire,,,,
+People are trapped inside a house because of fire.,Fire,,,,
+A building fire has injured several people.,Fire,,,,
+Two people were injured in a house fire.,Fire,,,,
+One person was injured in a kitchen fire.,Fire,,,,
+Several people were injured after a building caught fire.,Fire,,,,
+A fire has caused injuries inside an apartment.,Fire,,,,
+A burning building has people trapped inside.,Fire,,,,
+A fire is spreading rapidly through an apartment complex.,Fire,,,,
+A fire has engulfed several houses.,Fire,,,,
+Multiple buildings are burning.,Fire,,,,
+A major fire has affected several homes.,Fire,,,,
+A fire emergency has been reported in the town.,Fire,,,,
+Heavy smoke and flames are coming from a building.,Fire,,,,
+Firefighters are needed at a burning building.,Fire,,,,
+Emergency assistance is required because of a fire.,Fire,,,,
+A residential fire needs immediate emergency response.,Fire,,,,
+A serious fire has broken out near the city center.,Fire,,,,
+A fire has spread across several buildings.,Fire,,,,
+A large fire is threatening nearby residents.,Fire,,,,
+A small fire started in an empty storage shed.,Fire,,,,
+"A small fire in an empty storage shed. The fire is contained, nobody is injured, and nobody is trapped.",Fire,,,,
+"Small fire, no injuries or people trapped.",Fire,,,,
+A small fire broke out in an empty warehouse and was quickly contained.,Fire,,,,
+A minor fire started in a kitchen and was extinguished immediately.,Fire,,,,
+A small electrical fire was contained before it spread.,Fire,,,,
+A small fire started in an unoccupied building.,Fire,,,,
+"A waste bin caught fire, but the flames were quickly extinguished.",Fire,,,,
+A small fire started in a storage room with no one inside.,Fire,,,,
+A minor kitchen fire caused smoke but no injuries.,Fire,,,,
+A small fire was reported in a garage with no injuries.,Fire,,,,
+A small fire started in an empty shop after closing time.,Fire,,,,
+A small electrical fire occurred with no injuries or trapped people.,Fire,,,,
+A cooking fire was extinguished before spreading to other rooms.,Fire,,,,
+A small fire in a shed was contained by a nearby resident.,Fire,,,,
+"A fire broke out in a house, but everyone escaped safely.",Fire,,,,
+A small fire started in a room and was quickly put out.,Fire,,,,
+A minor fire occurred in a storage building with no casualties.,Fire,,,,
+A small fire was reported near a residential building.,Fire,,,,
+A contained fire occurred in a kitchen with no trapped people.,Fire,,,,
+A fire started in an electrical socket and was quickly extinguished.,Fire,,,,
+A small fire was reported in an empty office.,Fire,,,,
+A minor fire occurred in a shop without injuries.,Fire,,,,
+A small fire was extinguished before emergency services arrived.,Fire,,,,
+A fire started in a cooking pan but did not spread.,Fire,,,,
+A small fire broke out in a garden shed.,Fire,,,,
+A fire alarm was triggered by a small contained fire.,Fire,,,,
+A small fire occurred in a storage area with no people affected.,Fire,,,,
+A minor fire in an empty building was quickly brought under control.,Fire,,,,
+A small fire started in a trash container and was put out.,Fire,,,,

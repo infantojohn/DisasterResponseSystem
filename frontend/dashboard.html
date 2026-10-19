@@ -1,0 +1,827 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disaster Response Authority Dashboard</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f3f6;
+            color: #263238;
+        }
+
+        header {
+            background: #263238;
+            color: white;
+            padding: 20px 30px;
+        }
+
+        header h1 { margin: 0; }
+
+        .container {
+            max-width: 1500px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.1);
+        }
+
+        .card h3 { margin-top: 0; }
+
+        .number {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .critical { border-left: 6px solid #d32f2f; }
+        .high { border-left: 6px solid #f57c00; }
+        .medium { border-left: 6px solid #fbc02d; }
+        .low { border-left: 6px solid #388e3c; }
+        .total { border-left: 6px solid #1976d2; }
+
+        .incidents {
+            margin-top: 30px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.1);
+            overflow-x: auto;
+        }
+
+        .incident-filters {
+            display: grid;
+            grid-template-columns:
+                minmax(220px, 2fr)
+                repeat(3, minmax(140px, 1fr))
+                auto auto;
+            gap: 10px;
+            margin: 18px 0 22px;
+            align-items: center;
+        }
+
+        .incident-filters input,
+        .incident-filters select,
+        .incident-filters button {
+            width: 100%;
+            min-height: 40px;
+            padding: 9px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .incident-filters button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .incident-filters .clear-filters { background: #475569; }
+
+        .filter-note {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1500px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 13px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #eceff1;
+            white-space: nowrap;
+        }
+
+        .incident-id {
+            font-family: monospace;
+            font-size: 12px;
+            min-width: 190px;
+            max-width: 230px;
+            overflow-wrap: anywhere;
+        }
+
+        .copy-button {
+            margin-top: 6px;
+            padding: 5px 8px;
+            background: #475569;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .priority { font-weight: bold; }
+        .priority-Critical { color: #d32f2f; }
+        .priority-High { color: #f57c00; }
+        .priority-Medium { color: #b8860b; }
+        .priority-Low { color: #388e3c; }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background: #eceff1;
+            white-space: nowrap;
+        }
+
+        .assign-select {
+            width: 210px;
+            max-width: 100%;
+            padding: 8px;
+            border: 1px solid #bbb;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .assign-button {
+            padding: 8px 12px;
+            margin-top: 7px;
+            border: none;
+            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+        }
+
+        .assign-button:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+        .assigned {
+            color: #15803d;
+            font-weight: bold;
+        }
+
+        .recommendation {
+            min-width: 210px;
+            margin-bottom: 9px;
+            padding: 10px;
+            border: 1px solid #bbf7d0;
+            border-radius: 7px;
+            background: #f0fdf4;
+            line-height: 1.5;
+        }
+
+        .recommendation strong { color: #166534; }
+
+        .recommendation small {
+            display: block;
+            margin-top: 4px;
+            color: #475569;
+        }
+
+        .muted {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .error-message { color: #b91c1c; }
+
+        .empty-row {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .refresh-button {
+            padding: 9px 14px;
+            border: none;
+            border-radius: 6px;
+            background: #0f766e;
+            color: white;
+            cursor: pointer;
+        }
+
+        #connectionStatus {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        @media (max-width: 1000px) {
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+            .incident-filters {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 520px) {
+            header { padding: 18px; }
+            header h1 { font-size: 23px; }
+            .container { padding: 0 10px; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .incident-filters { grid-template-columns: 1fr; }
+            .incidents { padding: 15px; }
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <h1>🚨 Disaster Response Authority Dashboard</h1>
+    <p>AI-powered emergency monitoring and resource coordination</p>
+</header>
+
+<div class="container">
+    <div class="stats">
+        <div class="card critical">
+            <h3>Critical</h3>
+            <div class="number" id="critical">0</div>
+        </div>
+
+        <div class="card high">
+            <h3>High</h3>
+            <div class="number" id="high">0</div>
+        </div>
+
+        <div class="card medium">
+            <h3>Medium</h3>
+            <div class="number" id="medium">0</div>
+        </div>
+
+        <div class="card low">
+            <h3>Low</h3>
+            <div class="number" id="low">0</div>
+        </div>
+
+        <div class="card total">
+            <h3>Total</h3>
+            <div class="number" id="total">0</div>
+        </div>
+    </div>
+
+    <div class="incidents">
+        <div class="top-bar">
+            <h2>Recent Emergency Incidents</h2>
+            <button class="refresh-button" onclick="refreshDashboard()">
+                ↻ Refresh Dashboard
+            </button>
+        </div>
+
+        <p id="connectionStatus">Connecting to live updates...</p>
+
+        <div class="incident-filters">
+            <input
+                type="search"
+                id="incidentSearch"
+                placeholder="Search description or location..."
+                aria-label="Search incidents">
+
+            <select id="disasterTypeFilter" aria-label="Filter disaster type">
+                <option value="">All disaster types</option>
+                <option value="Flood">Flood</option>
+                <option value="Fire">Fire</option>
+                <option value="Cyclone">Cyclone</option>
+                <option value="Landslide">Landslide</option>
+                <option value="Building Collapse">Building Collapse</option>
+            </select>
+
+            <select id="priorityFilter" aria-label="Filter priority">
+                <option value="">All priorities</option>
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+            </select>
+
+            <select id="statusFilter" aria-label="Filter status">
+                <option value="">All statuses</option>
+                <option value="Reported">Reported</option>
+                <option value="Assigned">Assigned</option>
+                <option value="Accepted">Accepted</option>
+                <option value="On the Way">On the Way</option>
+                <option value="Rescuing">Rescuing</option>
+                <option value="Completed">Completed</option>
+            </select>
+
+            <button type="button" onclick="loadDashboard()">Apply</button>
+
+            <button
+                type="button"
+                class="clear-filters"
+                onclick="clearIncidentFilters()">
+                Clear
+            </button>
+        </div>
+
+        <p class="filter-note">
+            Statistics show all incidents. Filters apply to the table below.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Incident ID</th>
+                    <th>Disaster</th>
+                    <th>Priority</th>
+                    <th>Location</th>
+                    <th>Affected</th>
+                    <th>Trapped</th>
+                    <th>Injured</th>
+                    <th>Status</th>
+                    <th>Rescue Team / Recommendation</th>
+                </tr>
+            </thead>
+
+            <tbody id="incidentTable">
+                <tr>
+                    <td colspan="9" class="empty-row">Loading incidents...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const API_URL =
+    `${window.location.protocol}//${window.location.hostname}:8000`;
+
+let rescueTeams = [];
+let eventSource = null;
+let refreshInProgress = false;
+let refreshQueued = false;
+let liveUpdateTimer = null;
+let lastLiveEvent = "";
+
+const $ = id => document.getElementById(id);
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+async function fetchJSON(url, options = {}) {
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status} from ${url}`);
+    }
+
+    return response.json();
+}
+
+// Load current team availability before rendering assignments.
+async function loadRescueTeams() {
+    const data = await fetchJSON(`${API_URL}/rescue-teams`);
+
+    if (!Array.isArray(data)) {
+        throw new Error("Unexpected rescue-team response.");
+    }
+
+    rescueTeams = data;
+}
+
+// Load dashboard statistics and filtered incidents.
+async function loadDashboard() {
+    if (refreshInProgress) {
+        refreshQueued = true;
+        return;
+    }
+
+    refreshInProgress = true;
+
+    try {
+        const params = new URLSearchParams({
+            search: $("incidentSearch").value.trim(),
+            disaster_type: $("disasterTypeFilter").value,
+            priority: $("priorityFilter").value,
+            status: $("statusFilter").value
+        });
+
+        const [stats, incidents] = await Promise.all([
+            fetchJSON(`${API_URL}/dashboard/stats`),
+            fetchJSON(`${API_URL}/incidents?${params.toString()}`)
+        ]);
+
+        $("critical").textContent = stats.Critical ?? 0;
+        $("high").textContent = stats.High ?? 0;
+        $("medium").textContent = stats.Medium ?? 0;
+        $("low").textContent = stats.Low ?? 0;
+        $("total").textContent = stats.total ?? 0;
+
+        const table = $("incidentTable");
+
+        if (!Array.isArray(incidents) || incidents.length === 0) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="9" class="empty-row">
+                        No incidents match your filters.
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        // Build the new table off-screen so rows aren't added one by one.
+        const rows = document.createDocumentFragment();
+        const recommendationIds = [];
+
+        for (const incident of incidents) {
+            const row = document.createElement("tr");
+            const incidentId = String(incident.id ?? "");
+
+            let teamOptions = `
+                <option value="">-- Select Team --</option>
+            `;
+
+            for (const team of rescueTeams) {
+                const unavailable = team.status !== "Available";
+
+                teamOptions += `
+                    <option
+                        value="${escapeHTML(team.id)}"
+                        ${unavailable ? "disabled" : ""}>
+                        ${escapeHTML(team.name)}
+                        (${escapeHTML(team.status)})
+                    </option>`;
+            }
+
+            let assignmentHTML = "";
+
+            if (incident.assigned_team_id) {
+                const assignedTeam = rescueTeams.find(
+                    team => team.id === incident.assigned_team_id
+                );
+
+                assignmentHTML = `
+                    <span class="assigned">
+                        ✅ ${escapeHTML(
+                            assignedTeam?.name || "Team Assigned"
+                        )}
+                    </span>`;
+            } else {
+                assignmentHTML = `
+                    <div
+                        class="recommendation"
+                        id="recommendation-${escapeHTML(incidentId)}">
+                        <span class="muted">Finding recommended team...</span>
+                    </div>
+
+                    <select
+                        class="assign-select"
+                        id="team-${escapeHTML(incidentId)}">
+                        ${teamOptions}
+                    </select>
+
+                    <br>
+
+                    <button
+                        class="assign-button"
+                        id="assign-${escapeHTML(incidentId)}"
+                        onclick="assignTeam('${escapeHTML(incidentId)}')">
+                        Assign
+                    </button>`;
+            }
+
+            row.innerHTML = `
+                <td class="incident-id">
+                    <div>${escapeHTML(incidentId || "ID unavailable")}</div>
+                    <button
+                        class="copy-button"
+                        data-copy-id="${escapeHTML(incidentId)}"
+                        ${incidentId ? "" : "disabled"}>
+                        Copy ID
+                    </button>
+                </td>
+
+                <td>${escapeHTML(incident.disaster_type)}</td>
+
+                <td class="priority priority-${escapeHTML(incident.priority)}">
+                    ${escapeHTML(incident.priority)}
+                </td>
+
+                <td>${escapeHTML(incident.location)}</td>
+                <td>${escapeHTML(incident.affected_people ?? 0)}</td>
+                <td>${escapeHTML(incident.trapped_people ?? 0)}</td>
+                <td>${escapeHTML(incident.injured_people ?? 0)}</td>
+
+                <td>
+                    <span class="status">
+                        ${escapeHTML(incident.status)}
+                    </span>
+                </td>
+
+                <td>${assignmentHTML}</td>
+            `;
+
+            rows.appendChild(row);
+
+            if (!incident.assigned_team_id && incidentId) {
+                recommendationIds.push(incidentId);
+            }
+        }
+
+        // Replace all rows together to minimize visible flickering.
+        table.replaceChildren(rows);
+
+        // Recommendation elements must exist before their requests start.
+        for (const incidentId of recommendationIds) {
+            loadRecommendedTeam(incidentId);
+        }
+    } catch (error) {
+        console.error("Unable to load dashboard:", error);
+
+        $("connectionStatus").textContent =
+            "Could not load dashboard data. Check that FastAPI is running.";
+
+        $("incidentTable").innerHTML = `
+            <tr>
+                <td colspan="9" class="empty-row error-message">
+                    Unable to load incidents. Check the backend and try again.
+                </td>
+            </tr>`;
+    } finally {
+        refreshInProgress = false;
+
+        if (refreshQueued) {
+            refreshQueued = false;
+            loadDashboard();
+        }
+    }
+}
+
+// Show the best available team returned by the existing backend endpoint.
+async function loadRecommendedTeam(incidentId) {
+    const box = $(`recommendation-${incidentId}`);
+    if (!box) return;
+
+    try {
+        const result = await fetchJSON(
+            `${API_URL}/incidents/${encodeURIComponent(incidentId)}/recommended-teams`
+        );
+
+        if (result.error) {
+            throw new Error(result.error);
+        }
+
+        const recommendations = result.recommendations;
+
+        if (!Array.isArray(recommendations) || recommendations.length === 0) {
+            box.innerHTML = `
+                <strong>⚠️ No available rescue team</strong>
+                <small>Check rescue-team availability.</small>`;
+            return;
+        }
+
+        const bestTeam = recommendations[0];
+        const reasons = Array.isArray(bestTeam.reason)
+            ? bestTeam.reason
+            : [];
+
+        const reasonText = reasons.length
+            ? reasons.join(" • ")
+            : "General recommendation based on current team availability.";
+
+        box.innerHTML = `
+            <strong>⭐ Recommended: ${escapeHTML(bestTeam.name)}</strong>
+            <small>Score: ${escapeHTML(bestTeam.score ?? 0)}</small>
+            <small>${escapeHTML(reasonText)}</small>`;
+
+        // Preselect the recommendation, but never assign automatically.
+        const select = $(`team-${incidentId}`);
+
+        if (select && bestTeam.id) {
+            const option = Array.from(select.options).find(
+                item => item.value === bestTeam.id
+            );
+
+            if (option && !option.disabled) {
+                select.value = bestTeam.id;
+            }
+        }
+    } catch (error) {
+        console.error(
+            `Recommendation failed for incident ${incidentId}:`,
+            error
+        );
+
+        if (box.isConnected) {
+            box.innerHTML = `
+                <strong class="error-message">
+                    ⚠️ Recommendation unavailable
+                </strong>
+                <small>Check the recommended-teams endpoint in Swagger.</small>`;
+        }
+    }
+}
+
+// Copy an incident ID for use in the citizen tracking page.
+$("incidentTable").addEventListener("click", async event => {
+    const button = event.target.closest("[data-copy-id]");
+    if (!button) return;
+
+    const id = button.dataset.copyId;
+    if (!id) return;
+
+    try {
+        await navigator.clipboard.writeText(id);
+        button.textContent = "Copied!";
+
+        setTimeout(() => {
+            if (button.isConnected) button.textContent = "Copy ID";
+        }, 1500);
+    } catch (error) {
+        window.prompt("Copy this incident ID:", id);
+    }
+});
+
+// Assign a selected rescue team to an incident.
+async function assignTeam(incidentId) {
+    const select = $(`team-${incidentId}`);
+    const button = $(`assign-${incidentId}`);
+
+    if (!select || !select.value) {
+        alert("Please select a rescue team.");
+        return;
+    }
+
+    const teamId = select.value;
+    button.disabled = true;
+    button.textContent = "Assigning...";
+
+    try {
+        const result = await fetchJSON(
+            `${API_URL}/incidents/${encodeURIComponent(incidentId)}/assign/${encodeURIComponent(teamId)}`,
+            { method: "POST" }
+        );
+
+        if (result.error) {
+            throw new Error(result.error);
+        }
+
+        alert("Rescue team assigned successfully!");
+
+        await loadRescueTeams();
+        await loadDashboard();
+    } catch (error) {
+        console.error("Unable to assign team:", error);
+        alert(`Assignment failed: ${error.message}`);
+
+        if (button.isConnected) {
+            button.disabled = false;
+            button.textContent = "Assign";
+        }
+    }
+}
+
+function clearIncidentFilters() {
+    $("incidentSearch").value = "";
+    $("disasterTypeFilter").value = "";
+    $("priorityFilter").value = "";
+    $("statusFilter").value = "";
+
+    loadDashboard();
+}
+
+async function refreshDashboard() {
+    try {
+        await loadRescueTeams();
+    } catch (error) {
+        console.error("Unable to refresh rescue teams:", error);
+    }
+
+    await loadDashboard();
+}
+
+// Set up the live update connection using the existing FastAPI SSE endpoint.
+function connectLiveUpdates() {
+    if (!("EventSource" in window)) {
+        $("connectionStatus").textContent =
+            "Live updates are not supported in this browser.";
+        return;
+    }
+
+    if (eventSource) {
+        eventSource.close();
+    }
+
+    eventSource = new EventSource(`${API_URL}/incidents/stream`);
+
+    eventSource.onopen = () => {
+        $("connectionStatus").textContent =
+            "🟢 Live updates connected";
+    };
+
+    
+
+eventSource.onmessage = async event => {
+    console.log("📩 Live event received:", event.data);
+
+    let change;
+
+    try {
+        change = JSON.parse(event.data);
+    } catch (error) {
+        console.error("Invalid live event:", error);
+        return;
+    }
+
+    if (!["incidents", "rescue_teams"].includes(change.collection)) {
+        console.log("Ignoring collection:", change.collection);
+        return;
+    }
+
+    console.log("🔄 Refreshing dashboard because of:", change.collection);
+
+    if (liveUpdateTimer) {
+        clearTimeout(liveUpdateTimer);
+    }
+
+    liveUpdateTimer = setTimeout(async () => {
+        liveUpdateTimer = null;
+
+        try {
+            await refreshDashboard();
+            console.log("✅ Dashboard refresh completed.");
+        } catch (error) {
+            console.error("❌ Dashboard refresh failed:", error);
+        }
+    }, 700);
+};
+
+
+
+    eventSource.onerror = error => {
+        console.error("Live update connection error:", error);
+
+        $("connectionStatus").textContent =
+            "🟠 Reconnecting to live updates...";
+
+        // EventSource automatically attempts to reconnect.
+    };
+}
+
+// Apply filters when Enter is pressed in the search box.
+$("incidentSearch").addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+        loadDashboard();
+    }
+});
+
+// Start the dashboard.
+async function initializeDashboard() {
+    try {
+        await loadRescueTeams();
+        await loadDashboard();
+        connectLiveUpdates();
+    } catch (error) {
+        console.error("Dashboard initialization failed:", error);
+    }
+}
+
+initializeDashboard();
+
+// Close the SSE connection when leaving the page.
+window.addEventListener("beforeunload", () => {
+    if (eventSource) {
+        eventSource.close();
+    }
+
+    if (liveUpdateTimer) {
+        clearTimeout(liveUpdateTimer);
+    }
+});
+</script>
+</body>
+</html>

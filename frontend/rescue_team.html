@@ -1,0 +1,535 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rescue Team Portal</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f6f8;
+        }
+
+        header {
+            background: #1f2937;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .team-selector {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .incident-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .priority {
+            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        .priority-Critical {
+            background: #dc2626;
+            color: white;
+        }
+
+        .priority-High {
+            background: #f97316;
+            color: white;
+        }
+
+        .priority-Medium {
+            background: #eab308;
+            color: black;
+        }
+
+        .priority-Low {
+            background: #22c55e;
+            color: white;
+        }
+
+        .details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .detail-box {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .detail-box strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .status {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 12px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .empty {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        .connection-status {
+            font-size: 14px;
+            margin-top: 8px;
+            color: #d1d5db;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>🚨 Rescue Team Portal</h1>
+    <p>AI-Powered Disaster Response System</p>
+    <div id="connectionStatus" class="connection-status">
+        🟠 Connecting to live updates...
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="team-selector">
+        <h2>Select Rescue Team</h2>
+
+        <select id="teamSelect" onchange="loadTeamIncidents()">
+            <option value="">-- Select your team --</option>
+        </select>
+    </div>
+
+    <div id="incidentContainer">
+        <div class="empty">
+            Select a rescue team to view assigned incidents.
+        </div>
+    </div>
+
+</div>
+
+<script>
+const API_URL =
+    `${window.location.protocol}//${window.location.hostname}:8000`;
+
+let eventSource = null;
+let liveUpdateTimer = null;
+let teamRefreshInProgress = false;
+let incidentRefreshInProgress = false;
+
+
+// ============================================
+// LOAD RESCUE TEAMS
+// ============================================
+async function loadTeams() {
+    if (teamRefreshInProgress) return;
+
+    teamRefreshInProgress = true;
+
+    try {
+        const response = await fetch(`${API_URL}/rescue-teams`);
+
+        if (!response.ok) {
+            throw new Error(`Request failed: ${response.status}`);
+        }
+
+        const teams = await response.json();
+        const select = document.getElementById("teamSelect");
+        const previousValue = select.value;
+
+        // Update only the dropdown options.
+        select.replaceChildren(
+            new Option("-- Select your team --", "")
+        );
+
+        teams.forEach(team => {
+            const option = document.createElement("option");
+
+            option.value = team.id;
+            option.textContent = `${team.name} (${team.status})`;
+
+            select.appendChild(option);
+        });
+
+        // Preserve the selected team if it still exists.
+        if (teams.some(team => team.id === previousValue)) {
+            select.value = previousValue;
+        } else {
+            select.value = "";
+
+            document.getElementById("incidentContainer").innerHTML = `
+                <div class="empty">
+                    Select a rescue team to view assigned incidents.
+                </div>
+            `;
+        }
+
+    } catch (error) {
+        console.error("Unable to load rescue teams:", error);
+    } finally {
+        teamRefreshInProgress = false;
+    }
+}
+
+
+// ============================================
+// LOAD INCIDENTS FOR SELECTED TEAM
+// ============================================
+async function loadTeamIncidents() {
+    const teamId = document.getElementById("teamSelect").value;
+    const container = document.getElementById("incidentContainer");
+
+    if (!teamId) {
+        container.innerHTML = `
+            <div class="empty">
+                Select a rescue team to view assigned incidents.
+            </div>
+        `;
+        return;
+    }
+
+    if (incidentRefreshInProgress) return;
+
+    incidentRefreshInProgress = true;
+
+    try {
+        const response = await fetch(
+            `${API_URL}/teams/${teamId}/incidents`
+        );
+
+        if (!response.ok) {
+            throw new Error(`Request failed: ${response.status}`);
+        }
+
+        const incidents = await response.json();
+
+        // Prevent an old request from displaying another team's incidents.
+        if (document.getElementById("teamSelect").value !== teamId) {
+            return;
+        }
+
+        if (!Array.isArray(incidents) || incidents.length === 0) {
+            container.innerHTML = `
+                <div class="empty">
+                    No incidents are currently assigned to this team.
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = "";
+
+        incidents.forEach(incident => {
+            const card = document.createElement("div");
+            card.className = "incident-card";
+
+            card.innerHTML = `
+                <h2>${incident.disaster_type}</h2>
+
+                <span class="priority priority-${incident.priority}">
+                    ${incident.priority}
+                </span>
+
+                <div class="details">
+                    <div class="detail-box">
+                        <strong>📍 Location</strong>
+                        ${incident.location ?? "Not specified"}
+                    </div>
+
+                    <div class="detail-box">
+                        <strong>👥 Affected</strong>
+                        ${incident.affected_people ?? 0}
+                    </div>
+
+                    <div class="detail-box">
+                        <strong>⚠️ Trapped</strong>
+                        ${incident.trapped_people ?? 0}
+                    </div>
+
+                    <div class="detail-box">
+                        <strong>🏥 Injured</strong>
+                        ${incident.injured_people ?? 0}
+                    </div>
+                </div>
+
+                <div class="status">
+                    Current Status:
+                    <span id="status-${incident.id}">
+                        ${incident.status}
+                    </span>
+                </div>
+
+                <div id="buttons-${incident.id}">
+                    ${getStatusButtons(incident)}
+                </div>
+
+                <div class="message" id="message-${incident.id}"></div>
+            `;
+
+            container.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error("Unable to load incidents:", error);
+        container.innerHTML = `
+            <div class="empty">
+                Unable to load incidents. Please try again.
+            </div>
+        `;
+    } finally {
+        incidentRefreshInProgress = false;
+    }
+}
+
+
+// ============================================
+// GENERATE STATUS BUTTONS
+// ============================================
+function getStatusButtons(incident) {
+    switch (incident.status) {
+        case "Assigned":
+            return `
+                <button onclick="updateStatus(
+                    '${incident.id}', 'Accepted'
+                )">
+                    Accept Assignment
+                </button>
+            `;
+
+        case "Accepted":
+            return `
+                <button onclick="updateStatus(
+                    '${incident.id}', 'On the Way'
+                )">
+                    🚑 On the Way
+                </button>
+            `;
+
+        case "On the Way":
+            return `
+                <button onclick="updateStatus(
+                    '${incident.id}', 'Rescuing'
+                )">
+                    🛟 Start Rescue
+                </button>
+            `;
+
+        case "Rescuing":
+            return `
+                <button onclick="updateStatus(
+                    '${incident.id}', 'Completed'
+                )">
+                    ✅ Complete Rescue
+                </button>
+            `;
+
+        case "Completed":
+            return `<p>✅ Rescue operation completed.</p>`;
+
+        default:
+            return "";
+    }
+}
+
+
+// ============================================
+// UPDATE INCIDENT STATUS
+// ============================================
+async function updateStatus(incidentId, newStatus) {
+    try {
+        const response = await fetch(
+            `${API_URL}/incidents/${incidentId}/status?new_status=${
+                encodeURIComponent(newStatus)
+            }`,
+            { method: "PUT" }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok || result.error) {
+            alert(result.error || "Unable to update status.");
+            return;
+        }
+
+        const statusElement =
+            document.getElementById(`status-${incidentId}`);
+
+        const buttonsElement =
+            document.getElementById(`buttons-${incidentId}`);
+
+        const messageElement =
+            document.getElementById(`message-${incidentId}`);
+
+        if (statusElement) {
+            statusElement.textContent = result.new_status;
+        }
+
+        if (buttonsElement) {
+            buttonsElement.innerHTML = getStatusButtons({
+                id: incidentId,
+                status: result.new_status
+            });
+        }
+
+        if (messageElement) {
+            messageElement.textContent = "Status updated successfully.";
+        }
+
+        // Completion may change the team's availability.
+        if (newStatus === "Completed") {
+            await loadTeams();
+        }
+
+        // The Change Stream will also refresh the incident cards.
+        // Keep a fallback refresh in case the stream is delayed.
+        setTimeout(() => {
+            loadTeamIncidents();
+        }, 700);
+
+    } catch (error) {
+        console.error("Unable to update status:", error);
+        alert("Unable to update incident status.");
+    }
+}
+
+
+// ============================================
+// MONGODB CHANGE STREAM / SERVER-SENT EVENTS
+// ============================================
+function connectLiveUpdates() {
+    if (!("EventSource" in window)) {
+        document.getElementById("connectionStatus").textContent =
+            "⚠️ Live updates are not supported by this browser.";
+        return;
+    }
+
+    if (eventSource) {
+        eventSource.close();
+    }
+
+    eventSource = new EventSource(`${API_URL}/incidents/stream`);
+
+    eventSource.onopen = () => {
+        document.getElementById("connectionStatus").textContent =
+            "🟢 Live updates connected";
+    };
+
+    eventSource.onmessage = event => {
+        let change;
+
+        try {
+            change = JSON.parse(event.data);
+        } catch (error) {
+            console.error("Invalid live update event:", error);
+            return;
+        }
+
+        // Ignore collections unrelated to this portal.
+        if (!["rescue_teams", "incidents"].includes(change.collection)) {
+            return;
+        }
+
+        if (liveUpdateTimer) {
+            clearTimeout(liveUpdateTimer);
+        }
+
+        liveUpdateTimer = setTimeout(async () => {
+            liveUpdateTimer = null;
+
+            if (change.collection === "rescue_teams") {
+                // Refresh team availability without reloading the page.
+                await loadTeams();
+            }
+
+            if (change.collection === "incidents") {
+                // Refresh the currently selected team's incident cards.
+                const selectedTeam =
+                    document.getElementById("teamSelect").value;
+
+                if (selectedTeam) {
+                    await loadTeamIncidents();
+                }
+            }
+        }, 500);
+    };
+
+    eventSource.onerror = error => {
+        document.getElementById("connectionStatus").textContent =
+            "🟠 Reconnecting to live updates...";
+
+        console.error("Live update connection interrupted:", error);
+
+        // EventSource reconnects automatically.
+    };
+}
+
+
+// ============================================
+// INITIALIZE PORTAL
+// ============================================
+loadTeams();
+connectLiveUpdates();
+</script>
+
+</body>
+</html>
