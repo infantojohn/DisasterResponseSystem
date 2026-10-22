@@ -1,5 +1,5 @@
 import joblib
-
+import re
 from .extract_information import extract_information
 from .duplicate_detection import find_related_reports
 from .resource_recommendation import recommend_resources
@@ -60,7 +60,24 @@ def analyze_report(report):
     # 1. Predict disaster type using AI model
     # --------------------------------------------------
 
+    # Predict disaster type using the trained model
     disaster_type = disaster_model.predict([report])[0]
+
+# Correct the prediction when the report explicitly names a disaster
+    text = report.lower()
+
+    explicit_disaster_patterns = {
+        "Flood": r"\bflood(?:s|ing)?\b",
+        "Fire": r"\bfire\b",
+        "Cyclone": r"\bcyclone\b",
+        "Landslide": r"\blandslide\b",
+        "Building Collapse": r"\bbuilding collapse\b"
+    }
+
+    for category, pattern in explicit_disaster_patterns.items():
+        if re.search(pattern, text):
+            disaster_type = category
+            break
 
 
     # --------------------------------------------------

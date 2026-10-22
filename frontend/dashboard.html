@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -70,6 +69,7 @@
             grid-template-columns:
                 minmax(220px, 2fr)
                 repeat(3, minmax(140px, 1fr))
+                repeat(2, minmax(140px, 1fr))
                 auto auto;
             gap: 10px;
             margin: 18px 0 22px;
@@ -103,7 +103,7 @@
 
         table {
             width: 100%;
-            min-width: 1500px;
+            min-width: 1650px;
             border-collapse: collapse;
         }
 
@@ -204,6 +204,77 @@
             font-size: 13px;
         }
 
+        /* Incident timeline */
+        .timeline-button {
+            margin-top: 7px;
+            padding: 7px 10px;
+            border: none;
+            border-radius: 5px;
+            background: #0f766e;
+            color: white;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .timeline-row td {
+            background: #f8fafc;
+            padding: 18px 22px;
+        }
+
+        .timeline-panel {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 15px;
+            background: white;
+            min-width: 320px;
+        }
+
+        .timeline-panel h3 { margin: 0 0 12px; }
+
+        .timeline-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 0 0 16px 28px;
+            border-left: 2px solid #cbd5e1;
+            margin-left: 7px;
+        }
+
+        .timeline-item:last-child {
+            border-left-color: transparent;
+            padding-bottom: 0;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -7px;
+            top: 2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #94a3b8;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px #94a3b8;
+        }
+
+        .timeline-item.done .timeline-dot {
+            background: #16a34a;
+            box-shadow: 0 0 0 1px #16a34a;
+        }
+
+        .timeline-status { font-weight: bold; }
+
+        .timeline-time {
+            display: block;
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
         .error-message { color: #b91c1c; }
 
         .empty-row {
@@ -232,6 +303,12 @@
         #connectionStatus {
             font-size: 13px;
             color: #64748b;
+        }
+
+        @media (max-width: 1250px) {
+            .incident-filters {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
         }
 
         @media (max-width: 1000px) {
@@ -331,6 +408,18 @@
                 <option value="Completed">Completed</option>
             </select>
 
+            <input
+                type="date"
+                id="dateFromFilter"
+                aria-label="From date"
+                title="From date (IST)">
+
+            <input
+                type="date"
+                id="dateToFilter"
+                aria-label="To date"
+                title="To date (IST)">
+
             <button type="button" onclick="loadDashboard()">Apply</button>
 
             <button
@@ -343,12 +432,14 @@
 
         <p class="filter-note">
             Statistics show all incidents. Filters apply to the table below.
+            Date filters use India Standard Time (IST).
         </p>
 
         <table>
             <thead>
                 <tr>
                     <th>Incident ID</th>
+                    <th>Submitted At (IST)</th>
                     <th>Disaster</th>
                     <th>Priority</th>
                     <th>Location</th>
@@ -357,12 +448,13 @@
                     <th>Injured</th>
                     <th>Status</th>
                     <th>Rescue Team / Recommendation</th>
+                    <th>Progress Timeline</th>
                 </tr>
             </thead>
 
             <tbody id="incidentTable">
                 <tr>
-                    <td colspan="9" class="empty-row">Loading incidents...</td>
+                    <td colspan="11" class="empty-row">Loading incidents...</td>
                 </tr>
             </tbody>
         </table>
@@ -378,7 +470,6 @@ let eventSource = null;
 let refreshInProgress = false;
 let refreshQueued = false;
 let liveUpdateTimer = null;
-let lastLiveEvent = "";
 
 const $ = id => document.getElementById(id);
 
@@ -392,11 +483,64 @@ function escapeHTML(value) {
     })[char]);
 }
 
+// Display incident creation time in IST.
+// Prefer created_at because it is the canonical database timestamp.
+// MongoDB/PyMongo may serialize UTC datetimes without a timezone suffix;
+// treat those timezone-naive values as UTC, not as the browser's local time.
+function formatIncidentDateTime(incident) {
+    const rawDate = incident.created_at ?? incident.created_at_ist;
+
+    if (!rawDate) return "Unavailable";
+
+    let timestamp = String(rawDate).trim();
+
+    // created_at is the canonical UTC field. If it has no timezone marker,
+    // explicitly mark it as UTC so JavaScript cannot interpret it as local IST.
+    if (incident.created_at != null) {
+        if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(timestamp)) {
+            timestamp += "Z";
+        }
+    } else {
+        // Legacy fallback: created_at_ist is a wall-clock string in IST.
+        // Attach the IST offset only if the value has no timezone information.
+        timestamp = timestamp.replace(" ", "T");
+        if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(timestamp)) {
+            timestamp += "+05:30";
+        }
+    }
+
+    const parsedDate = new Date(timestamp);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+        return escapeHTML(rawDate);
+    }
+
+    return parsedDate.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    });
+}
+
 async function fetchJSON(url, options = {}) {
     const response = await fetch(url, options);
 
     if (!response.ok) {
-        throw new Error(`HTTP ${response.status} from ${url}`);
+        let message = `HTTP ${response.status} from ${url}`;
+
+        try {
+            const errorBody = await response.json();
+            if (errorBody.detail) message = errorBody.detail;
+        } catch (_) {
+            // Keep the default HTTP error message.
+        }
+
+        throw new Error(message);
     }
 
     return response.json();
@@ -427,8 +571,14 @@ async function loadDashboard() {
             search: $("incidentSearch").value.trim(),
             disaster_type: $("disasterTypeFilter").value,
             priority: $("priorityFilter").value,
-            status: $("statusFilter").value
+            status: $("statusFilter").value,
+            date_from: $("dateFromFilter").value,
+            date_to: $("dateToFilter").value
         });
+
+        for (const key of ["date_from", "date_to"]) {
+            if (!params.get(key)) params.delete(key);
+        }
 
         const [stats, incidents] = await Promise.all([
             fetchJSON(`${API_URL}/dashboard/stats`),
@@ -446,24 +596,24 @@ async function loadDashboard() {
         if (!Array.isArray(incidents) || incidents.length === 0) {
             table.innerHTML = `
                 <tr>
-                    <td colspan="9" class="empty-row">
+                    <td colspan="11" class="empty-row">
                         No incidents match your filters.
                     </td>
                 </tr>`;
             return;
         }
 
-        // Build the new table off-screen so rows aren't added one by one.
         const rows = document.createDocumentFragment();
         const recommendationIds = [];
 
         for (const incident of incidents) {
             const row = document.createElement("tr");
-            const incidentId = String(incident.id ?? "");
 
-            let teamOptions = `
-                <option value="">-- Select Team --</option>
-            `;
+            const incidentId = String(
+                incident._id ?? incident.id ?? incident.incident_id ?? ""
+            );
+
+            let teamOptions = `<option value="">-- Select Team --</option>`;
 
             for (const team of rescueTeams) {
                 const unavailable = team.status !== "Available";
@@ -481,14 +631,12 @@ async function loadDashboard() {
 
             if (incident.assigned_team_id) {
                 const assignedTeam = rescueTeams.find(
-                    team => team.id === incident.assigned_team_id
+                    team => team.id === String(incident.assigned_team_id)
                 );
 
                 assignmentHTML = `
                     <span class="assigned">
-                        ✅ ${escapeHTML(
-                            assignedTeam?.name || "Team Assigned"
-                        )}
+                        ✅ ${escapeHTML(assignedTeam?.name || "Team Assigned")}
                     </span>`;
             } else {
                 assignmentHTML = `
@@ -516,7 +664,13 @@ async function loadDashboard() {
 
             row.innerHTML = `
                 <td class="incident-id">
-                    <div>${escapeHTML(incidentId || "ID unavailable")}</div>
+                    <div>${escapeHTML(
+                        incident._id ||
+                        incident.id ||
+                        incident.incident_id ||
+                        "ID unavailable"
+                    )}</div>
+
                     <button
                         class="copy-button"
                         data-copy-id="${escapeHTML(incidentId)}"
@@ -525,6 +679,7 @@ async function loadDashboard() {
                     </button>
                 </td>
 
+                <td>${escapeHTML(formatIncidentDateTime(incident))}</td>
                 <td>${escapeHTML(incident.disaster_type)}</td>
 
                 <td class="priority priority-${escapeHTML(incident.priority)}">
@@ -537,25 +692,47 @@ async function loadDashboard() {
                 <td>${escapeHTML(incident.injured_people ?? 0)}</td>
 
                 <td>
-                    <span class="status">
-                        ${escapeHTML(incident.status)}
-                    </span>
+                    <span class="status">${escapeHTML(incident.status)}</span>
                 </td>
 
                 <td>${assignmentHTML}</td>
-            `;
+
+                <td>
+                    <button
+                        type="button"
+                        class="timeline-button"
+                        data-timeline-id="${escapeHTML(incidentId)}"
+                        aria-expanded="false">
+                        View Timeline
+                    </button>
+                </td>`;
 
             rows.appendChild(row);
+
+            // Expandable row for the incident timeline.
+            const timelineRow = document.createElement("tr");
+            timelineRow.className = "timeline-row";
+            timelineRow.id = `timeline-row-${incidentId}`;
+            timelineRow.hidden = true;
+
+            timelineRow.innerHTML = `
+                <td colspan="11">
+                    <div
+                        class="timeline-panel"
+                        id="timeline-panel-${escapeHTML(incidentId)}">
+                        Open the timeline to load incident history.
+                    </div>
+                </td>`;
+
+            rows.appendChild(timelineRow);
 
             if (!incident.assigned_team_id && incidentId) {
                 recommendationIds.push(incidentId);
             }
         }
 
-        // Replace all rows together to minimize visible flickering.
         table.replaceChildren(rows);
 
-        // Recommendation elements must exist before their requests start.
         for (const incidentId of recommendationIds) {
             loadRecommendedTeam(incidentId);
         }
@@ -567,7 +744,7 @@ async function loadDashboard() {
 
         $("incidentTable").innerHTML = `
             <tr>
-                <td colspan="9" class="empty-row error-message">
+                <td colspan="11" class="empty-row error-message">
                     Unable to load incidents. Check the backend and try again.
                 </td>
             </tr>`;
@@ -591,9 +768,7 @@ async function loadRecommendedTeam(incidentId) {
             `${API_URL}/incidents/${encodeURIComponent(incidentId)}/recommended-teams`
         );
 
-        if (result.error) {
-            throw new Error(result.error);
-        }
+        if (result.error) throw new Error(result.error);
 
         const recommendations = result.recommendations;
 
@@ -605,9 +780,7 @@ async function loadRecommendedTeam(incidentId) {
         }
 
         const bestTeam = recommendations[0];
-        const reasons = Array.isArray(bestTeam.reason)
-            ? bestTeam.reason
-            : [];
+        const reasons = Array.isArray(bestTeam.reason) ? bestTeam.reason : [];
 
         const reasonText = reasons.length
             ? reasons.join(" • ")
@@ -626,9 +799,7 @@ async function loadRecommendedTeam(incidentId) {
                 item => item.value === bestTeam.id
             );
 
-            if (option && !option.disabled) {
-                select.value = bestTeam.id;
-            }
+            if (option && !option.disabled) select.value = bestTeam.id;
         }
     } catch (error) {
         console.error(
@@ -643,6 +814,117 @@ async function loadRecommendedTeam(incidentId) {
                 </strong>
                 <small>Check the recommended-teams endpoint in Swagger.</small>`;
         }
+    }
+}
+
+// Expand or collapse an incident's timeline.
+$("incidentTable").addEventListener("click", async event => {
+    const timelineButton = event.target.closest("[data-timeline-id]");
+    if (!timelineButton) return;
+
+    const incidentId = timelineButton.dataset.timelineId;
+    const timelineRow = $(`timeline-row-${incidentId}`);
+    const panel = $(`timeline-panel-${incidentId}`);
+
+    if (!timelineRow || !panel) return;
+
+    const shouldOpen = timelineRow.hidden;
+    timelineRow.hidden = !shouldOpen;
+    timelineButton.setAttribute("aria-expanded", String(shouldOpen));
+    timelineButton.textContent = shouldOpen ? "Hide Timeline" : "View Timeline";
+
+    if (shouldOpen && panel.dataset.loaded !== "true") {
+        panel.textContent = "Loading timeline...";
+        await renderIncidentTimeline(incidentId, panel);
+    }
+});
+
+// Convert UTC timestamps from FastAPI into readable IST.
+function formatTimelineTimestamp(rawTimestamp) {
+    if (!rawTimestamp) {
+        return "Timestamp unavailable";
+    }
+
+    let timestamp = String(rawTimestamp).trim();
+
+    // If the backend returns a timezone-naive datetime,
+    // treat it as UTC rather than the browser's local time.
+    if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(timestamp)) {
+        timestamp += "Z";
+    }
+
+    const date = new Date(timestamp);
+
+    if (Number.isNaN(date.getTime())) {
+        return "Timestamp unavailable";
+    }
+
+    return date.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    }) + " IST";
+}
+
+async function renderIncidentTimeline(incidentId, panel) {
+    const steps = [
+        "Reported",
+        "Assigned",
+        "Accepted",
+        "On the Way",
+        "Rescuing",
+        "Completed"
+    ];
+
+    try {
+        const history = await fetchJSON(
+            `${API_URL}/incidents/${encodeURIComponent(incidentId)}/history`
+        );
+
+        const timestampByStatus = {};
+
+        if (Array.isArray(history)) {
+            for (const item of history) {
+                if (item.new_status && item.updated_at) {
+                    timestampByStatus[item.new_status] = item.updated_at;
+                }
+            }
+        }
+
+        panel.innerHTML = `
+            <h3>Incident Progress Timeline</h3>
+            <ol class="timeline-list">
+                ${steps.map(step => {
+                    const timestamp = timestampByStatus[step];
+                    const completed = Boolean(timestamp);
+
+                    return `
+                        <li class="timeline-item ${completed ? "done" : ""}">
+                            <span class="timeline-dot"></span>
+                            <span class="timeline-status">${escapeHTML(step)}</span>
+                            <span class="timeline-time">
+                                ${escapeHTML(formatTimelineTimestamp(timestamp))}
+                            </span>
+                        </li>`;
+                }).join("")}
+            </ol>
+            <p class="muted">
+                All times are shown in India Standard Time (IST).
+                Older incidents may not have saved timestamps for every step.
+            </p>`;
+
+        panel.dataset.loaded = "true";
+    } catch (error) {
+        console.error("Unable to load incident timeline:", error);
+        panel.innerHTML = `
+            <p class="error-message">
+                Unable to load timeline. Please refresh and try again.
+            </p>`;
     }
 }
 
@@ -686,9 +968,7 @@ async function assignTeam(incidentId) {
             { method: "POST" }
         );
 
-        if (result.error) {
-            throw new Error(result.error);
-        }
+        if (result.error) throw new Error(result.error);
 
         alert("Rescue team assigned successfully!");
 
@@ -710,6 +990,8 @@ function clearIncidentFilters() {
     $("disasterTypeFilter").value = "";
     $("priorityFilter").value = "";
     $("statusFilter").value = "";
+    $("dateFromFilter").value = "";
+    $("dateToFilter").value = "";
 
     loadDashboard();
 }
@@ -732,71 +1014,52 @@ function connectLiveUpdates() {
         return;
     }
 
-    if (eventSource) {
-        eventSource.close();
-    }
+    if (eventSource) eventSource.close();
 
     eventSource = new EventSource(`${API_URL}/incidents/stream`);
 
     eventSource.onopen = () => {
-        $("connectionStatus").textContent =
-            "🟢 Live updates connected";
+        $("connectionStatus").textContent = "🟢 Live updates connected";
     };
 
-    
-
-eventSource.onmessage = async event => {
-    console.log("📩 Live event received:", event.data);
-
-    let change;
-
-    try {
-        change = JSON.parse(event.data);
-    } catch (error) {
-        console.error("Invalid live event:", error);
-        return;
-    }
-
-    if (!["incidents", "rescue_teams"].includes(change.collection)) {
-        console.log("Ignoring collection:", change.collection);
-        return;
-    }
-
-    console.log("🔄 Refreshing dashboard because of:", change.collection);
-
-    if (liveUpdateTimer) {
-        clearTimeout(liveUpdateTimer);
-    }
-
-    liveUpdateTimer = setTimeout(async () => {
-        liveUpdateTimer = null;
+    eventSource.onmessage = async event => {
+        let change;
 
         try {
-            await refreshDashboard();
-            console.log("✅ Dashboard refresh completed.");
+            change = JSON.parse(event.data);
         } catch (error) {
-            console.error("❌ Dashboard refresh failed:", error);
+            console.error("Invalid live event:", error);
+            return;
         }
-    }, 700);
-};
 
+        if (!["incidents", "rescue_teams"].includes(change.collection)) {
+            return;
+        }
 
+        if (liveUpdateTimer) clearTimeout(liveUpdateTimer);
+
+        liveUpdateTimer = setTimeout(async () => {
+            liveUpdateTimer = null;
+
+            try {
+                await refreshDashboard();
+            } catch (error) {
+                console.error("Dashboard refresh failed:", error);
+            }
+        }, 700);
+    };
 
     eventSource.onerror = error => {
         console.error("Live update connection error:", error);
-
         $("connectionStatus").textContent =
             "🟠 Reconnecting to live updates...";
-
         // EventSource automatically attempts to reconnect.
     };
 }
 
 // Apply filters when Enter is pressed in the search box.
 $("incidentSearch").addEventListener("keydown", event => {
-    if (event.key === "Enter") {
-        loadDashboard();
-    }
+    if (event.key === "Enter") loadDashboard();
 });
 
 // Start the dashboard.
@@ -814,13 +1077,8 @@ initializeDashboard();
 
 // Close the SSE connection when leaving the page.
 window.addEventListener("beforeunload", () => {
-    if (eventSource) {
-        eventSource.close();
-    }
-
-    if (liveUpdateTimer) {
-        clearTimeout(liveUpdateTimer);
-    }
+    if (eventSource) eventSource.close();
+    if (liveUpdateTimer) clearTimeout(liveUpdateTimer);
 });
 </script>
 </body>

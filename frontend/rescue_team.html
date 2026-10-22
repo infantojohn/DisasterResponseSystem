@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,10 +6,15 @@
     <title>Rescue Team Portal</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             background: #f4f6f8;
+            color: #1f2937;
         }
 
         header {
@@ -87,6 +91,7 @@
             background: #f3f4f6;
             padding: 15px;
             border-radius: 8px;
+            overflow-wrap: anywhere;
         }
 
         .detail-box strong {
@@ -137,6 +142,96 @@
             margin-top: 8px;
             color: #d1d5db;
         }
+
+        /* Incident timeline */
+        .timeline-section {
+            margin-top: 22px;
+            padding: 18px;
+            border: 1px solid #dbe2ea;
+            border-radius: 9px;
+            background: #f9fafb;
+        }
+
+        .timeline-section h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+
+        .timeline-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-left: 8px;
+            padding: 0 0 18px 27px;
+            border-left: 2px solid #cbd5e1;
+        }
+
+        .timeline-item:last-child {
+            border-left-color: transparent;
+            padding-bottom: 0;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -7px;
+            top: 2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #94a3b8;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px #94a3b8;
+        }
+
+        .timeline-item.done .timeline-dot {
+            background: #16a34a;
+            box-shadow: 0 0 0 1px #16a34a;
+        }
+
+        .timeline-item.current .timeline-dot {
+            background: #2563eb;
+            box-shadow: 0 0 0 1px #2563eb;
+        }
+
+        .timeline-status {
+            font-weight: bold;
+        }
+
+        .timeline-time {
+            display: block;
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .timeline-note {
+            color: #64748b;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .timeline-error {
+            color: #b91c1c;
+        }
+
+        @media (max-width: 520px) {
+            .container {
+                padding: 12px;
+                margin: 15px auto;
+            }
+
+            .incident-card {
+                padding: 17px;
+            }
+
+            button {
+                max-width: 100%;
+            }
+        }
     </style>
 </head>
 
@@ -176,56 +271,118 @@ let eventSource = null;
 let liveUpdateTimer = null;
 let teamRefreshInProgress = false;
 let incidentRefreshInProgress = false;
+let lastSelectedTeamId = "";
+
+const STATUS_STEPS = [
+    "Reported",
+    "Assigned",
+    "Accepted",
+    "On the Way",
+    "Rescuing",
+    "Completed"
+];
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+async function fetchJSON(url, options = {}) {
+    const response = await fetch(url, options);
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.detail || data.error || `Request failed: ${response.status}`);
+    }
+
+    if (data && data.error) {
+        throw new Error(data.error);
+    }
+
+    return data;
+}
+
+// Convert UTC timestamps into readable India Standard Time.
+// Convert backend timestamps to India Standard Time (IST).
+function formatTimelineTimestamp(rawTimestamp) {
+    if (!rawTimestamp) {
+        return "Timestamp unavailable";
+    }
+
+    let timestamp = String(rawTimestamp).trim();
+
+    // If the backend returns a timezone-naive datetime,
+    // treat it as UTC rather than the browser's local time.
+    if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(timestamp)) {
+        timestamp += "Z";
+    }
+
+    const date = new Date(timestamp);
+
+    if (Number.isNaN(date.getTime())) {
+        return "Timestamp unavailable";
+    }
+
+    return date.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    }) + " IST";
+}
 
 
 // ============================================
 // LOAD RESCUE TEAMS
 // ============================================
+
 async function loadTeams() {
     if (teamRefreshInProgress) return;
 
     teamRefreshInProgress = true;
 
     try {
-        const response = await fetch(`${API_URL}/rescue-teams`);
-
-        if (!response.ok) {
-            throw new Error(`Request failed: ${response.status}`);
-        }
-
-        const teams = await response.json();
+        const teams = await fetchJSON(`${API_URL}/rescue-teams`);
         const select = document.getElementById("teamSelect");
         const previousValue = select.value;
 
-        // Update only the dropdown options.
         select.replaceChildren(
             new Option("-- Select your team --", "")
         );
 
         teams.forEach(team => {
             const option = document.createElement("option");
-
             option.value = team.id;
             option.textContent = `${team.name} (${team.status})`;
-
             select.appendChild(option);
         });
 
         // Preserve the selected team if it still exists.
         if (teams.some(team => team.id === previousValue)) {
             select.value = previousValue;
-        } else {
+        } else if (previousValue) {
             select.value = "";
+            lastSelectedTeamId = "";
 
             document.getElementById("incidentContainer").innerHTML = `
                 <div class="empty">
-                    Select a rescue team to view assigned incidents.
-                </div>
-            `;
+                    The selected team is no longer available.
+                    Please select a team again.
+                </div>`;
         }
-
     } catch (error) {
         console.error("Unable to load rescue teams:", error);
+        document.getElementById("connectionStatus").textContent =
+            "⚠️ Unable to load rescue teams. Check the backend.";
     } finally {
         teamRefreshInProgress = false;
     }
@@ -235,35 +392,34 @@ async function loadTeams() {
 // ============================================
 // LOAD INCIDENTS FOR SELECTED TEAM
 // ============================================
+
 async function loadTeamIncidents() {
     const teamId = document.getElementById("teamSelect").value;
     const container = document.getElementById("incidentContainer");
 
     if (!teamId) {
+        lastSelectedTeamId = "";
         container.innerHTML = `
             <div class="empty">
                 Select a rescue team to view assigned incidents.
-            </div>
-        `;
+            </div>`;
         return;
     }
 
-    if (incidentRefreshInProgress) return;
+    if (incidentRefreshInProgress) {
+        lastSelectedTeamId = teamId;
+        return;
+    }
 
     incidentRefreshInProgress = true;
+    lastSelectedTeamId = teamId;
 
     try {
-        const response = await fetch(
-            `${API_URL}/teams/${teamId}/incidents`
+        const incidents = await fetchJSON(
+            `${API_URL}/teams/${encodeURIComponent(teamId)}/incidents`
         );
 
-        if (!response.ok) {
-            throw new Error(`Request failed: ${response.status}`);
-        }
-
-        const incidents = await response.json();
-
-        // Prevent an old request from displaying another team's incidents.
+        // Do not display results for a team that is no longer selected.
         if (document.getElementById("teamSelect").value !== teamId) {
             return;
         }
@@ -272,72 +428,167 @@ async function loadTeamIncidents() {
             container.innerHTML = `
                 <div class="empty">
                     No incidents are currently assigned to this team.
-                </div>
-            `;
+                </div>`;
             return;
         }
 
         container.innerHTML = "";
 
-        incidents.forEach(incident => {
+        for (const incident of incidents) {
             const card = document.createElement("div");
             card.className = "incident-card";
 
-            card.innerHTML = `
-                <h2>${incident.disaster_type}</h2>
+            const incidentId = String(
+                incident.id ?? incident._id ?? ""
+            );
 
-                <span class="priority priority-${incident.priority}">
-                    ${incident.priority}
+            card.innerHTML = `
+                <h2>${escapeHTML(incident.disaster_type)}</h2>
+
+                <span class="priority priority-${escapeHTML(incident.priority)}">
+                    ${escapeHTML(incident.priority)}
                 </span>
 
                 <div class="details">
                     <div class="detail-box">
                         <strong>📍 Location</strong>
-                        ${incident.location ?? "Not specified"}
+                        ${escapeHTML(incident.location ?? "Not specified")}
                     </div>
 
                     <div class="detail-box">
                         <strong>👥 Affected</strong>
-                        ${incident.affected_people ?? 0}
+                        ${escapeHTML(incident.affected_people ?? 0)}
                     </div>
 
                     <div class="detail-box">
                         <strong>⚠️ Trapped</strong>
-                        ${incident.trapped_people ?? 0}
+                        ${escapeHTML(incident.trapped_people ?? 0)}
                     </div>
 
                     <div class="detail-box">
                         <strong>🏥 Injured</strong>
-                        ${incident.injured_people ?? 0}
+                        ${escapeHTML(incident.injured_people ?? 0)}
                     </div>
                 </div>
 
                 <div class="status">
                     Current Status:
-                    <span id="status-${incident.id}">
-                        ${incident.status}
+                    <span id="status-${escapeHTML(incidentId)}">
+                        ${escapeHTML(incident.status)}
                     </span>
                 </div>
 
-                <div id="buttons-${incident.id}">
+                <div id="buttons-${escapeHTML(incidentId)}">
                     ${getStatusButtons(incident)}
                 </div>
 
-                <div class="message" id="message-${incident.id}"></div>
+                <div class="message" id="message-${escapeHTML(incidentId)}"></div>
+
+                <section
+                    class="timeline-section"
+                    id="timeline-${escapeHTML(incidentId)}">
+                    <h3>📍 Incident Progress Timeline</h3>
+                    <p>Loading incident history...</p>
+                </section>
             `;
 
             container.appendChild(card);
-        });
 
+            // Load persistent history from the backend for this incident.
+            loadIncidentTimeline(incidentId);
+        }
     } catch (error) {
         console.error("Unable to load incidents:", error);
+
         container.innerHTML = `
             <div class="empty">
-                Unable to load incidents. Please try again.
-            </div>
-        `;
+                Unable to load incidents: ${escapeHTML(error.message)}
+                <br><br>
+                Please check the backend and try again.
+            </div>`;
     } finally {
         incidentRefreshInProgress = false;
+
+        // If the team changed while a request was running, load the latest selection.
+        const currentTeamId = document.getElementById("teamSelect").value;
+
+        if (currentTeamId && currentTeamId !== teamId) {
+            loadTeamIncidents();
+        }
+    }
+}
+
+
+// ============================================
+// LOAD INCIDENT STATUS TIMELINE
+// ============================================
+
+async function loadIncidentTimeline(incidentId) {
+    const timelineElement =
+        document.getElementById(`timeline-${incidentId}`);
+
+    if (!timelineElement) return;
+
+    try {
+        const history = await fetchJSON(
+            `${API_URL}/incidents/${encodeURIComponent(incidentId)}/history`
+        );
+
+        const timestampByStatus = {};
+
+        if (Array.isArray(history)) {
+            history.forEach(item => {
+                if (item.new_status && item.updated_at) {
+                    timestampByStatus[item.new_status] = item.updated_at;
+                }
+            });
+        }
+
+        const latestStatus = STATUS_STEPS.reduce(
+            (latest, step) => timestampByStatus[step] ? step : latest,
+            "Reported"
+        );
+
+        timelineElement.innerHTML = `
+            <h3>📍 Incident Progress Timeline</h3>
+
+            <ol class="timeline-list">
+                ${STATUS_STEPS.map(step => {
+                    const timestamp = timestampByStatus[step];
+                    const isDone = Boolean(timestamp);
+                    const isCurrent = step === latestStatus;
+
+                    return `
+                        <li class="timeline-item
+                            ${isDone ? "done" : ""}
+                            ${isCurrent ? "current" : ""}">
+                            <span class="timeline-dot"></span>
+                            <span class="timeline-status">
+                                ${escapeHTML(step)}
+                            </span>
+                            <span class="timeline-time">
+                                ${escapeHTML(formatTimelineTimestamp(timestamp))}
+                            </span>
+                        </li>`;
+                }).join("")}
+            </ol>
+
+            <p class="timeline-note">
+                All timestamps are shown in India Standard Time (IST).
+                Older incidents may not have recorded timestamps for every step.
+            </p>
+        `;
+    } catch (error) {
+        console.error(
+            `Unable to load timeline for incident ${incidentId}:`,
+            error
+        );
+
+        timelineElement.innerHTML = `
+            <h3>📍 Incident Progress Timeline</h3>
+            <p class="timeline-error">
+                Unable to load timeline. Please refresh and try again.
+            </p>`;
     }
 }
 
@@ -345,43 +596,42 @@ async function loadTeamIncidents() {
 // ============================================
 // GENERATE STATUS BUTTONS
 // ============================================
+
 function getStatusButtons(incident) {
+    const incidentId = String(incident.id ?? incident._id ?? "");
+
     switch (incident.status) {
         case "Assigned":
             return `
                 <button onclick="updateStatus(
-                    '${incident.id}', 'Accepted'
+                    '${escapeHTML(incidentId)}', 'Accepted'
                 )">
                     Accept Assignment
-                </button>
-            `;
+                </button>`;
 
         case "Accepted":
             return `
                 <button onclick="updateStatus(
-                    '${incident.id}', 'On the Way'
+                    '${escapeHTML(incidentId)}', 'On the Way'
                 )">
                     🚑 On the Way
-                </button>
-            `;
+                </button>`;
 
         case "On the Way":
             return `
                 <button onclick="updateStatus(
-                    '${incident.id}', 'Rescuing'
+                    '${escapeHTML(incidentId)}', 'Rescuing'
                 )">
                     🛟 Start Rescue
-                </button>
-            `;
+                </button>`;
 
         case "Rescuing":
             return `
                 <button onclick="updateStatus(
-                    '${incident.id}', 'Completed'
+                    '${escapeHTML(incidentId)}', 'Completed'
                 )">
                     ✅ Complete Rescue
-                </button>
-            `;
+                </button>`;
 
         case "Completed":
             return `<p>✅ Rescue operation completed.</p>`;
@@ -395,10 +645,11 @@ function getStatusButtons(incident) {
 // ============================================
 // UPDATE INCIDENT STATUS
 // ============================================
+
 async function updateStatus(incidentId, newStatus) {
     try {
         const response = await fetch(
-            `${API_URL}/incidents/${incidentId}/status?new_status=${
+            `${API_URL}/incidents/${encodeURIComponent(incidentId)}/status?new_status=${
                 encodeURIComponent(newStatus)
             }`,
             { method: "PUT" }
@@ -435,20 +686,22 @@ async function updateStatus(incidentId, newStatus) {
             messageElement.textContent = "Status updated successfully.";
         }
 
+        // Reload the timeline immediately after a successful status update.
+        await loadIncidentTimeline(incidentId);
+
         // Completion may change the team's availability.
         if (newStatus === "Completed") {
             await loadTeams();
         }
 
-        // The Change Stream will also refresh the incident cards.
-        // Keep a fallback refresh in case the stream is delayed.
+        // Refresh the incident cards in case the database update arrives later.
         setTimeout(() => {
             loadTeamIncidents();
         }, 700);
 
     } catch (error) {
         console.error("Unable to update status:", error);
-        alert("Unable to update incident status.");
+        alert("Unable to update incident status. Check the backend connection.");
     }
 }
 
@@ -456,6 +709,7 @@ async function updateStatus(incidentId, newStatus) {
 // ============================================
 // MONGODB CHANGE STREAM / SERVER-SENT EVENTS
 // ============================================
+
 function connectLiveUpdates() {
     if (!("EventSource" in window)) {
         document.getElementById("connectionStatus").textContent =
@@ -484,25 +738,20 @@ function connectLiveUpdates() {
             return;
         }
 
-        // Ignore collections unrelated to this portal.
         if (!["rescue_teams", "incidents"].includes(change.collection)) {
             return;
         }
 
-        if (liveUpdateTimer) {
-            clearTimeout(liveUpdateTimer);
-        }
+        if (liveUpdateTimer) clearTimeout(liveUpdateTimer);
 
         liveUpdateTimer = setTimeout(async () => {
             liveUpdateTimer = null;
 
             if (change.collection === "rescue_teams") {
-                // Refresh team availability without reloading the page.
                 await loadTeams();
             }
 
             if (change.collection === "incidents") {
-                // Refresh the currently selected team's incident cards.
                 const selectedTeam =
                     document.getElementById("teamSelect").value;
 
@@ -527,8 +776,19 @@ function connectLiveUpdates() {
 // ============================================
 // INITIALIZE PORTAL
 // ============================================
-loadTeams();
-connectLiveUpdates();
+
+async function initializePortal() {
+    await loadTeams();
+    connectLiveUpdates();
+}
+
+initializePortal();
+
+// Close the SSE connection when leaving the page.
+window.addEventListener("beforeunload", () => {
+    if (eventSource) eventSource.close();
+    if (liveUpdateTimer) clearTimeout(liveUpdateTimer);
+});
 </script>
 
 </body>

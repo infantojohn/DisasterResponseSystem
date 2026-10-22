@@ -1,21 +1,23 @@
 
-from bson import ObjectId
-from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime, timezone
+import json
+import math
 import re
+from datetime import date, datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 
-from fastapi import FastAPI
+from bson import ObjectId
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from database.connection import db
 from ai.analyze_report import analyze_report
-from fastapi.responses import StreamingResponse
-import json
 
-import math
-from datetime import date, datetime
-from bson import ObjectId
 
+# --------------------------------------------------
+# JSON SAFETY
+# --------------------------------------------------
 
 def make_json_safe(value):
     if isinstance(value, dict):
@@ -30,10 +32,22 @@ def make_json_safe(value):
     if isinstance(value, float) and not math.isfinite(value):
         return None
 
-    if isinstance(value, (ObjectId, datetime, date)):
+    if isinstance(value, ObjectId):
         return str(value)
 
+    if isinstance(value, datetime):
+        return value.isoformat()
+
+    if isinstance(value, date):
+        return value.isoformat()
+
     return value
+
+
+# --------------------------------------------------
+# FASTAPI APPLICATION
+# --------------------------------------------------
+
 app = FastAPI(
     title="AI Disaster Response System",
     description="AI-powered disaster analysis and response backend",
@@ -56,6 +70,10 @@ class IncidentRequest(BaseModel):
     location: str
 
 
+# --------------------------------------------------
+# HOME
+# --------------------------------------------------
+
 @app.get("/")
 def home():
     return {
@@ -63,13 +81,18 @@ def home():
     }
 
 
+# --------------------------------------------------
+# CREATE INCIDENT WITH AI ANALYSIS
+# --------------------------------------------------
+
 @app.post("/incidents")
 def create_incident(request: IncidentRequest):
 
-    # Run complete AI analysis
     result = analyze_report(request.report)
 
-    # Create MongoDB document
+    now_utc = datetime.now(timezone.utc)
+    now_ist = now_utc.astimezone(ZoneInfo("Asia/Kolkata"))
+
     incident = {
         "raw_report": request.report,
         "disaster_type": result["disaster_type"],
@@ -82,11 +105,18 @@ def create_incident(request: IncidentRequest):
         "status": "Reported",
         "recommended_resources": result["recommended_resources"],
         "related_incidents": result["related_incidents"],
-        "created_at": datetime.now(timezone.utc)
+        "created_at": now_utc,
+        "created_at_ist": now_ist.strftime("%Y-%m-%d %H:%M:%S")
     }
 
-    # Store in MongoDB
     insert_result = incidents.insert_one(incident)
+
+    db["incident_status_history"].insert_one({
+        "incident_id": insert_result.inserted_id,
+        "old_status": None,
+        "new_status": "Reported",
+        "updated_at": now_utc
+    })
 
     return {
         "message": "Incident created successfully",
@@ -102,68 +132,140 @@ def create_incident(request: IncidentRequest):
     }
 
 
-# Search and filter incidents
+# --------------------------------------------------
+# GET INCIDENTS WITH SEARCH AND FILTERS
+# --------------------------------------------------
+
 @app.get("/incidents")
 def get_incidents(
     search: str = "",
     disaster_type: str = "",
     priority: str = "",
-    status: str = ""
+    status: str = "",
+    date_from: date | None = None,
+    date_to: date | None = None
 ):
-    # Build a MongoDB query from the selected filters.
     query = {}
+    ist = ZoneInfo("Asia/Kolkata")
+
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(
+            status_code=400,
+            detail="date_from must be on or before date_to"
+        )
+
+    date_conditions = {}
+
+    if date_from:
+        start_ist = datetime.combine(
+            date_from,
+            time.min,
+            tzinfo=ist
+        )
+        date_conditions["$gte"] = start_ist.astimezone(timezone.utc)
+
+    if date_to:
+        end_exclusive_ist = datetime.combine(
+            date_to + timedelta(days=1),
+            time.min,
+            tzinfo=ist
+        )
+        date_conditions["$lt"] = (
+            end_exclusive_ist.astimezone(timezone.utc)
+        )
+
+    if date_conditions:
+        query["created_at"] = date_conditions
 
     search = search.strip()
 
     if search:
         safe_search = re.escape(search)
 
-        query["$or"] = [
-            {
-                "raw_report": {
-                    "$regex": safe_search,
-                    "$options": "i"
-                }
-            },
-            {
-                "location": {
-                    "$regex": safe_search,
-                    "$options": "i"
-                }
-            }
+        disaster_categories = [
+            "Flood",
+            "Fire",
+            "Cyclone",
+            "Building Collapse",
+            "Landslide"
         ]
 
-    if disaster_type.strip():
-        query["disaster_type"] = disaster_type.strip()
-
-    if priority.strip():
-        query["priority"] = priority.strip()
-
-    if status.strip():
-        query["status"] = status.strip()
-
-    incidents_list = []
-
-    for incident in incidents.find(query).sort("created_at", -1):
-        incidents_list.append({
-            "id": str(incident["_id"]),
-            "disaster_type": incident.get("disaster_type"),
-            "priority": incident.get("priority"),
-            "location": incident.get("location"),
-            "affected_people": incident.get("affected_people", 0),
-            "trapped_people": incident.get("trapped_people", 0),
-            "injured_people": incident.get("injured_people", 0),
-            "status": incident.get("status"),
-            "assigned_team_id": (
-                str(incident["assigned_team_id"])
-                if incident.get("assigned_team_id")
-                else None
+        matched_category = next(
+            (
+                category
+                for category in disaster_categories
+                if category.lower() == search.lower()
             ),
-            "created_at": str(incident.get("created_at"))
-        })
+            None
+        )
 
-    return incidents_list
+        if matched_category:
+            query["disaster_type"] = {
+                "$regex": f"^{re.escape(matched_category)}$",
+                "$options": "i"
+            }
+        else:
+            query["$or"] = [
+                {
+                    "raw_report": {
+                        "$regex": safe_search,
+                        "$options": "i"
+                    }
+                },
+                {
+                    "location": {
+                        "$regex": safe_search,
+                        "$options": "i"
+                    }
+                },
+                {
+                    "disaster_type": {
+                        "$regex": safe_search,
+                        "$options": "i"
+                    }
+                },
+                {
+                    "priority": {
+                        "$regex": safe_search,
+                        "$options": "i"
+                    }
+                },
+                {
+                    "status": {
+                        "$regex": safe_search,
+                        "$options": "i"
+                    }
+                }
+            ]
 
+    if disaster_type.strip() and disaster_type.strip().lower() != "all":
+        query["disaster_type"] = {
+            "$regex": f"^{re.escape(disaster_type.strip())}$",
+            "$options": "i"
+        }
+
+    if priority.strip() and priority.strip().lower() != "all":
+        query["priority"] = {
+            "$regex": f"^{re.escape(priority.strip())}$",
+            "$options": "i"
+        }
+
+    if status.strip() and status.strip().lower() != "all":
+        query["status"] = {
+            "$regex": f"^{re.escape(status.strip())}$",
+            "$options": "i"
+        }
+
+    matching_incidents = list(
+        incidents.find(query).sort("created_at", -1)
+    )
+
+    return make_json_safe(matching_incidents)
+
+
+# --------------------------------------------------
+# DASHBOARD STATISTICS
+# --------------------------------------------------
 
 @app.get("/dashboard/stats")
 def get_dashboard_stats():
@@ -187,68 +289,102 @@ def get_dashboard_stats():
     }
 
     for result in results:
-        priority = result["_id"]
+        priority_value = result["_id"]
 
-        if priority in stats:
-            stats[priority] = result["count"]
+        if priority_value in stats:
+            stats[priority_value] = result["count"]
 
     stats["total"] = sum(stats.values())
 
     return stats
 
 
+# --------------------------------------------------
+# ASSIGN RESCUE TEAM
+# --------------------------------------------------
+
 @app.post("/incidents/{incident_id}/assign/{team_id}")
 def assign_team(incident_id: str, team_id: str):
 
+    try:
+        incident_object_id = ObjectId(incident_id)
+        team_object_id = ObjectId(team_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid incident ID or team ID"
+        )
+
     incident = incidents.find_one({
-        "_id": ObjectId(incident_id)
+        "_id": incident_object_id
     })
 
     if not incident:
-        return {
-            "error": "Incident not found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Incident not found"
+        )
+
+    if incident.get("status") == "Completed":
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "A completed incident cannot be reassigned. "
+                "Create a new incident if further help is needed."
+            )
+        )
 
     rescue_teams = db["rescue_teams"]
 
     team = rescue_teams.find_one({
-        "_id": ObjectId(team_id)
+        "_id": team_object_id
     })
 
     if not team:
-        return {
-            "error": "Rescue team not found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Rescue team not found"
+        )
 
     if team.get("status") != "Available":
-        return {
-            "error": "Rescue team is not available"
-        }
+        raise HTTPException(
+            status_code=409,
+            detail="Rescue team is not available"
+        )
 
-    # MongoDB transaction
+    assigned_at = datetime.now(timezone.utc)
+
     with db.client.start_session() as session:
-
         with session.start_transaction():
 
-            # Assign team to incident
             incidents.update_one(
-                {"_id": ObjectId(incident_id)},
+                {"_id": incident_object_id},
                 {
                     "$set": {
-                        "assigned_team_id": ObjectId(team_id),
-                        "status": "Assigned"
+                        "assigned_team_id": team_object_id,
+                        "status": "Assigned",
+                        "assigned_at": assigned_at
                     }
                 },
                 session=session
             )
 
-            # Mark team unavailable
             rescue_teams.update_one(
-                {"_id": ObjectId(team_id)},
+                {"_id": team_object_id},
                 {
                     "$set": {
                         "status": "Unavailable"
                     }
+                },
+                session=session
+            )
+
+            db["incident_status_history"].insert_one(
+                {
+                    "incident_id": incident_object_id,
+                    "old_status": incident.get("status", "Reported"),
+                    "new_status": "Assigned",
+                    "updated_at": assigned_at
                 },
                 session=session
             )
@@ -262,55 +398,72 @@ def assign_team(incident_id: str, team_id: str):
     }
 
 
+# --------------------------------------------------
+# RECOMMEND AVAILABLE RESCUE TEAMS
+# --------------------------------------------------
+
 @app.get("/incidents/{incident_id}/recommended-teams")
 def recommend_teams(incident_id: str):
 
-    incident = incidents.find_one({
-        "_id": ObjectId(incident_id)
-    })
+    try:
+        object_id = ObjectId(incident_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid incident ID"
+        )
+
+    incident = incidents.find_one({"_id": object_id})
 
     if not incident:
-        return {"error": "Incident not found"}
+        raise HTTPException(
+            status_code=404,
+            detail="Incident not found"
+        )
 
     available_teams = list(
         db["rescue_teams"].find({"status": "Available"})
     )
 
-    disaster_type = incident.get("disaster_type", "")
-    priority = incident.get("priority", "")
-    injured_people = incident.get("injured_people", 0)
-    trapped_people = incident.get("trapped_people", 0)
+    disaster_type_value = incident.get("disaster_type", "")
+    priority_value = incident.get("priority", "")
+    injured_people = incident.get("injured_people", 0) or 0
+    trapped_people = incident.get("trapped_people", 0) or 0
 
     recommendations = []
 
     for team in available_teams:
-
         score = 0
         reason = []
 
         team_name = team.get("name", "")
         team_type = team.get("type", "")
 
-        # Flood-related incidents
-        if disaster_type == "Flood":
-            if "Water" in team_name or "Water" in team_type:
+        if disaster_type_value == "Flood":
+            if (
+                "water" in team_name.lower()
+                or "water" in team_type.lower()
+            ):
                 score += 100
                 reason.append("Suitable for flood/water rescue")
 
-        # Medical emergencies
         if injured_people > 0:
-            if "Medical" in team_name or "Medical" in team_type:
+            if (
+                "medical" in team_name.lower()
+                or "medical" in team_type.lower()
+            ):
                 score += 100
                 reason.append("Medical assistance required")
 
-        # Trapped people / structural disasters
         if trapped_people > 0:
-            if "Search" in team_name or "Search" in team_type:
+            if (
+                "search" in team_name.lower()
+                or "search" in team_type.lower()
+            ):
                 score += 100
                 reason.append("People reported trapped")
 
-        # Critical incidents get additional priority
-        if priority == "Critical":
+        if priority_value == "Critical":
             score += 20
             reason.append("Critical priority incident")
 
@@ -323,7 +476,7 @@ def recommend_teams(incident_id: str):
         })
 
     recommendations.sort(
-        key=lambda x: x["score"],
+        key=lambda item: item["score"],
         reverse=True
     )
 
@@ -333,14 +486,16 @@ def recommend_teams(incident_id: str):
     }
 
 
+# --------------------------------------------------
+# GET RESCUE TEAMS
+# --------------------------------------------------
+
 @app.get("/rescue-teams")
 def get_rescue_teams():
 
-    rescue_teams = db["rescue_teams"]
-
     teams = []
 
-    for team in rescue_teams.find():
+    for team in db["rescue_teams"].find():
         teams.append({
             "id": str(team["_id"]),
             "name": team["name"],
@@ -351,25 +506,35 @@ def get_rescue_teams():
     return teams
 
 
+# --------------------------------------------------
+# GET INCIDENTS ASSIGNED TO A TEAM
+# --------------------------------------------------
+
 @app.get("/teams/{team_id}/incidents")
 def get_team_incidents(team_id: str):
 
-    rescue_teams = db["rescue_teams"]
+    try:
+        team_object_id = ObjectId(team_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid team ID"
+        )
 
-    # Check whether team exists
-    team = rescue_teams.find_one({
-        "_id": ObjectId(team_id)
+    team = db["rescue_teams"].find_one({
+        "_id": team_object_id
     })
 
     if not team:
-        return {
-            "error": "Rescue team not found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Rescue team not found"
+        )
 
     team_incidents = []
 
     for incident in incidents.find({
-        "assigned_team_id": ObjectId(team_id)
+        "assigned_team_id": team_object_id
     }).sort("created_at", -1):
 
         team_incidents.append({
@@ -381,14 +546,27 @@ def get_team_incidents(team_id: str):
             "trapped_people": incident.get("trapped_people", 0),
             "injured_people": incident.get("injured_people", 0),
             "status": incident.get("status"),
-            "created_at": str(incident.get("created_at"))
+            "created_at": make_json_safe(incident.get("created_at")),
+            "created_at_ist": incident.get("created_at_ist")
         })
 
     return team_incidents
 
 
+# --------------------------------------------------
+# UPDATE INCIDENT STATUS AND RELEASE TEAM ON COMPLETION
+# --------------------------------------------------
+
 @app.put("/incidents/{incident_id}/status")
 def update_incident_status(incident_id: str, new_status: str):
+
+    try:
+        incident_object_id = ObjectId(incident_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid incident ID"
+        )
 
     new_status = new_status.strip()
 
@@ -403,18 +581,20 @@ def update_incident_status(incident_id: str, new_status: str):
     new_status = status_map.get(new_status.lower())
 
     if new_status is None:
-        return {
-            "error": "Invalid status"
-        }
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid status"
+        )
 
     incident = incidents.find_one({
-        "_id": ObjectId(incident_id)
+        "_id": incident_object_id
     })
 
     if not incident:
-        return {
-            "error": "Incident not found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Incident not found"
+        )
 
     current_status = incident.get("status")
 
@@ -426,16 +606,18 @@ def update_incident_status(incident_id: str, new_status: str):
     }
 
     if new_status not in allowed_transitions.get(current_status, []):
-        return {
-            "error": (
+        raise HTTPException(
+            status_code=400,
+            detail=(
                 f"Cannot change status from "
                 f"{current_status} to {new_status}"
             )
-        }
+        )
 
-    # Update incident status
+    now_utc = datetime.now(timezone.utc)
+
     incidents.update_one(
-        {"_id": ObjectId(incident_id)},
+        {"_id": incident_object_id},
         {
             "$set": {
                 "status": new_status
@@ -443,15 +625,11 @@ def update_incident_status(incident_id: str, new_status: str):
         }
     )
 
-    # If rescue is completed, make the assigned team available again
     if new_status == "Completed":
-
         assigned_team_id = incident.get("assigned_team_id")
 
         if assigned_team_id:
-            rescue_teams = db["rescue_teams"]
-
-            rescue_teams.update_one(
+            db["rescue_teams"].update_one(
                 {"_id": assigned_team_id},
                 {
                     "$set": {
@@ -460,13 +638,11 @@ def update_incident_status(incident_id: str, new_status: str):
                 }
             )
 
-    status_history = db["incident_status_history"]
-
-    status_history.insert_one({
-        "incident_id": ObjectId(incident_id),
+    db["incident_status_history"].insert_one({
+        "incident_id": incident_object_id,
         "old_status": current_status,
         "new_status": new_status,
-        "updated_at": datetime.now(timezone.utc)
+        "updated_at": now_utc
     })
 
     return {
@@ -477,36 +653,155 @@ def update_incident_status(incident_id: str, new_status: str):
     }
 
 
+# --------------------------------------------------
+# GET INCIDENT STATUS HISTORY
+# --------------------------------------------------
+
 @app.get("/incidents/{incident_id}/history")
 def get_incident_history(incident_id: str):
 
-    status_history = db["incident_status_history"]
+    try:
+        object_id = ObjectId(incident_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid incident ID"
+        )
 
-    history = status_history.find(
-        {"incident_id": ObjectId(incident_id)}
-    ).sort("updated_at", 1)
+    incident = incidents.find_one({"_id": object_id})
+
+    if not incident:
+        raise HTTPException(
+            status_code=404,
+            detail="Incident not found"
+        )
+
+    history = list(
+        db["incident_status_history"].find({
+            "incident_id": object_id
+        })
+    )
+
+    status_names = {
+        "reported": "Reported",
+        "assigned": "Assigned",
+        "accepted": "Accepted",
+        "on the way": "On the Way",
+        "on_the_way": "On the Way",
+        "rescuing": "Rescuing",
+        "completed": "Completed"
+    }
+
+    def get_timestamp(record):
+        value = (
+            record.get("updated_at")
+            or record.get("timestamp")
+            or record.get("created_at")
+        )
+
+        if isinstance(value, datetime):
+            return value
+
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(
+                    value.replace("Z", "+00:00")
+                )
+            except ValueError:
+                return None
+
+        return None
 
     result = []
 
     for record in history:
+        raw_status = record.get("new_status", "")
+        status_name = status_names.get(
+            str(raw_status).strip().lower(),
+            raw_status
+        )
+
+        timestamp = get_timestamp(record)
+
         result.append({
-            "old_status": record["old_status"],
-            "new_status": record["new_status"],
-            "updated_at": record["updated_at"]
+            "old_status": record.get("old_status"),
+            "new_status": status_name,
+            "updated_at": (
+                make_json_safe(timestamp)
+                if timestamp else None
+            )
         })
 
-    return result
+    # Recover Reported and Assigned only from genuine saved timestamps.
+    fallback_events = [
+        ("Reported", None, incident.get("created_at")),
+        ("Assigned", "Reported", incident.get("assigned_at"))
+    ]
+
+    for status_name, old_status, timestamp in fallback_events:
+        has_timestamped_event = any(
+            item["new_status"] == status_name
+            and item["updated_at"]
+            for item in result
+        )
+
+        if not has_timestamped_event and timestamp:
+            result.append({
+                "old_status": old_status,
+                "new_status": status_name,
+                "updated_at": make_json_safe(timestamp)
+            })
+
+    # Sort by actual time, not by status name or insertion order.
+    def sort_key(item):
+        value = item.get("updated_at")
+
+        if not value:
+            return (1, "")
+
+        try:
+            parsed = datetime.fromisoformat(
+                value.replace("Z", "+00:00")
+            )
+
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+
+            return (
+                0,
+                parsed.astimezone(timezone.utc).isoformat()
+            )
+
+        except (ValueError, AttributeError):
+            return (1, "")
+
+    result.sort(key=sort_key)
+
+    # The timeline UI shows one milestone per status.
+    # Keep the earliest genuine timestamp for each status.
+    deduplicated = []
+    seen = set()
+
+    for item in result:
+        status_name = item.get("new_status")
+
+        if status_name in seen:
+            continue
+
+        seen.add(status_name)
+        deduplicated.append(item)
+
+    return deduplicated
 
 
-from fastapi.responses import StreamingResponse
-import json
-
+# --------------------------------------------------
+# LIVE UPDATES USING MONGODB CHANGE STREAMS
+# --------------------------------------------------
 
 @app.get("/incidents/stream")
 def incident_stream():
 
     def event_generator():
-        # Watch changes across all collections in the database.
         with db.watch(
             [
                 {
@@ -533,7 +828,10 @@ def incident_stream():
                 }
 
                 safe_event = make_json_safe(event)
-                yield f"data: {json.dumps(safe_event, allow_nan=False)}\n\n"
+
+                yield (
+                    f"data: {json.dumps(safe_event, allow_nan=False)}\n\n"
+                )
 
     return StreamingResponse(
         event_generator(),

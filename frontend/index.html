@@ -442,15 +442,15 @@ async function trackIncident(options = {}) {
         // Find the incident matching the supplied ID.
         const response = await fetch(`${API_URL}/incidents`);
 
-        if (!response.ok) {
-            throw new Error("Unable to retrieve incidents");
-        }
+if (!response.ok) {
+    throw new Error("Unable to retrieve incidents");
+}
 
-        const incidents = await response.json();
+const incidents = await response.json();
 
-        const incident = incidents.find(item =>
-            String(item.id) === incidentId
-        );
+const incident = incidents.find(item =>
+    String(item.id ?? item._id ?? "").trim() === incidentId
+);
 
         if (!incident) {
             stopTrackingAutoRefresh();

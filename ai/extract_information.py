@@ -253,6 +253,7 @@ def extract_information(report):
     affected = trapped
 
     affected_patterns = [
+        rf"\b({quantity_pattern})\s+affected\b",
         # 20 people are affected
         rf"\b({quantity_pattern})\s+"
         r"(?:people|persons|residents|victims)\s+"
